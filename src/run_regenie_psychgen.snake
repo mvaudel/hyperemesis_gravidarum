@@ -1,0 +1,450 @@
+import os
+
+##
+#
+# This script runs regenie on the MoBa psychgen release.
+#
+# Commands to execute from the repository folder:
+# conda activate snakemake
+# snakemake --snakefile src/run_regenie_psychgen.snake --cores 32 --use-conda --rerun-incomplete
+##
+
+config_file = 'analysis.yaml'
+configfile: config_file
+
+name = config["id"]
+populations = config["populations"]
+analyses = config["analyses"]
+analyses_names = list(analyses.keys())
+
+# Analysis
+suffix = config["suffix"]
+pheno_version = config["pheno_version"]
+pheno_release = config["pheno_release"]
+work_folder = os.path.join('/mnt/work/marc/moba', name, suffix)
+
+# Phenotypes
+pheno_tables_folder = os.path.join("/mnt/archive/moba/pheno", pheno_version, pheno_release)
+pheno_folder = os.path.join(work_folder, 'pheno', pheno_version, pheno_release)
+
+# Genotype files
+moba_psychgen_folder = '/mnt/archive/moba/geno/MobaPsychgenReleaseMarch23/MoBaPsychGen_v1/'
+plink_stem = os.path.join(moba_psychgen_folder, 'MoBaPsychGen_v1-ec-eur-batch-basic-qc')
+best_snps = os.path.join(moba_psychgen_folder, '500k_N_genotyped_1+_info_0.97785.snps')
+
+# id files
+id_folder = '/mnt/archive/moba/pheno/v12/pheno_anthropometrics_23-05-28/id'
+
+# Result folders
+regenie_step1_folder = os.path.join(work_folder, 'regenie', 'step_1')
+regenie_step2_folder = os.path.join(work_folder, 'regenie', 'step_2')
+results_folder = os.path.join(work_folder, 'results')
+docs_folder = os.path.join('docs', suffix)
+
+
+####################### Housekeeping #########################################
+
+if not os.path.isdir(work_folder):
+    os.makedirs(work_folder)
+
+if not os.path.isdir(work_folder):
+    os.makedirs(pheno_folder)
+
+if not os.path.isdir(moba_psychgen_folder):
+    os.makedirs(moba_psychgen_folder)
+
+if not os.path.isdir(regenie_step1_folder):
+    os.makedirs(regenie_step1_folder)
+
+if not os.path.isdir(regenie_step2_folder):
+    os.makedirs(regenie_step2_folder)
+
+if not os.path.isdir(results_folder):
+    os.makedirs(results_folder)
+
+if not os.path.isdir(docs_folder):
+    os.makedirs(docs_folder)
+
+
+####################### RUN SETTINGS ###########################################
+
+# Covariates common to all runs
+default_covariates_child = ["batch_rotterdam2", "batch_norment_sep20_r996r1029", "batch_rotterdam1", "batch_pdb1382_r875_r876", "batch_norment_jan20", "batch_harvest", "batch_norment_may16", "batch_norment_jan21", "batch_norment_mai21", "batch_ted", "batch_norment_feb18"]
+default_covariates_mother = ["batch_rotterdam2", "batch_norment_sep20_r996r1029", "batch_rotterdam1", "batch_norment_jan21", "batch_norment_feb18", "batch_harvest", "batch_norment_may16", "batch_norment_mai21", "batch_norment_jan20", "batch_norment_jan15", "batch_pdb1382_r875_r876", "batch_norment_jun15", "batch_ted"]
+default_covariates_father = ["batch_rotterdam2", "batch_norment_mai21", "batch_rotterdam1", "batch_norment_feb18", "batch_harvest", "batch_norment_may16", "batch_norment_jan21", "batch_norment_jan20", "batch_norment_sep20_r996r1029", "batch_norment_jun15", "batch_pdb1382_r875_r876", "batch_ted", "batch_norment_jan15"]
+
+
+# Specifies what analyses to run
+
+chromosomes = list(range(1,23))
+
+# Create an output folder for every analysis
+for analysis in analyses_names:
+    pheno_output_folder = os.path.join(results_folder, analysis)
+    if not os.path.isdir(pheno_output_folder):
+        os.mkdir(pheno_output_folder)
+        cojo_folder = os.path.join(pheno_output_folder, 'cojo')
+        if not os.path.isdir(cojo_folder):
+            os.mkdir(cojo_folder)
+            cojo_input_folder = os.path.join(cojo_folder, 'tmp')
+            if not os.path.isdir(cojo_input_folder):
+                os.mkdir(cojo_input_folder)
+
+
+# Check that the locus zoom folder exists
+lz_folder = os.path.join(results_folder, 'lz')
+if not os.path.isdir(lz_folder):
+    os.mkdir(lz_folder)
+
+# Function to generate covariate commands
+def get_covariates(analysis, population):
+    analysis_covariates = analyses[analysis]["covariates"]
+    if population == "children":
+        covariates_population = default_covariates_child + analysis_covariates
+    elif population == "mothers":
+        covariates_population = default_covariates_mother + analysis_covariates
+    elif population == "fathers":
+        covariates_population = default_covariates_father + analysis_covariates
+    else:
+        raise Exception(f"No covariate found for population: '{population}'.")
+
+    result = ''
+    for i in range(0, len(covariates_population)):
+        if i > 0:
+            result += ' \
+                '
+        result += '--covarCol ' + covariates_population[i]
+    return result
+
+
+# Function returning the phenotype column for a given analysis
+def get_pheno_column(analysis):
+    return analyses[analysis]["phenotype"]
+
+# Function returning the argument for binary traits for step 1 when necessary
+def get_binary_option_step1(analysis):
+    phenotype_type = analyses[analysis]["phenotype_type"]
+    if phenotype_type == 'binary':
+        return "--bt"
+    if phenotype_type == 'quantitative':
+        return ""
+    raise Exception(f"Phenotype type {phenotype_type} for {analysis} not recognized.")
+
+# Function returning the argument for binary traits for step 2 when necessary
+def get_binary_option_step2(analysis):
+    phenotype_type = analyses[analysis]["phenotype_type"]
+    if phenotype_type == 'binary':
+        return "--bt --spa"
+    if phenotype_type == 'quantitative':
+        return ""
+    raise Exception(f"Phenotype type {phenotype_type} for {analysis} not recognized.")
+
+# Function to get the pheno file corresponding to the given population
+def get_pheno_file(population):
+    if population == "children":
+        return os.path.join(pheno_folder, "pheno_child")
+    elif population == "mothers":
+        return os.path.join(pheno_folder, "pheno_mother")
+    elif population == "fathers":
+        return os.path.join(pheno_folder, "pheno_father")
+    else:
+        raise Exception(f"No pheno file implemented for population: '{population}'.")
+
+# Function to get the sample id file corresponding to the given population
+def get_sample_id_file(population):
+    if population == "children":
+        return os.path.join(id_folder, "children_id_plink")
+    elif population == "mothers":
+        return os.path.join(id_folder, "mothers_id_plink")
+    elif population == "fathers":
+        return os.path.join(id_folder, "fathers_id_plink")
+    else:
+        raise Exception(f"No id file implemented for population: '{population}'.")
+
+# Function to get an unrelated sample id file corresponding to the given population in the plink format
+def get_unrelated_sample_id_file(population):
+    if population == "children":
+        return os.path.join(id_folder, "children_id_unrelated_30k_plink")
+    elif population == "mothers":
+        return os.path.join(id_folder, "mothers_id_unrelated_30k_plink")
+    elif population == "fathers":
+        return os.path.join(id_folder, "fathers_id_unrelated_30k_plink")
+    else:
+        raise Exception(f"No id file implemented for population: '{population}'.")
+
+# Function returning the cojo files expected for a given association study
+def get_cojo_chr_files(path):
+    cojo_files = list()
+    for chr in chromosomes:
+        cojo_files.append(str(path).replace("{chr}", str(chr)))
+    return cojo_files
+
+
+############################## RULES ###########################################
+
+print(f"Starting GWAS pipeline for {name}: {analyses_names} in {populations}.")
+rule all:
+    'The final output rule'
+    input:
+        expand(os.path.join(results_folder,'{analysis}','step2_pop_{population}_pheno_{analysis}.regenie.gz'), analysis = analyses_names, population = populations), # The association results
+        expand(os.path.join('docs','regenie_no_cojo','pop_{population}_pheno_{analysis}','pop_{population}_pheno_{analysis}.md'), analysis = analyses_names, population = populations), # Documentation without cojo
+        expand(os.path.join(results_folder, '{analysis}', 'cojo', 'step2_pop_{population}_pheno_{analysis}.jma.cojo'), analysis = analyses_names, population = populations), # Independent GW significant signals
+        expand(os.path.join('docs','regenie','pop_{population}_pheno_{analysis}','pop_{population}_pheno_{analysis}.md'), analysis = analyses_names, population = populations),  # Documentation with cojo
+        expand("README.md"), # The readme file
+
+
+rule pheno_file:
+    'Prepares a phenotype file for regenie.'
+    input:
+        id_file = os.path.join(pheno_tables_folder, "ids.gz"),
+        plink_fam = plink_stem + '.fam',
+    params:
+        pheno_tables_folder = pheno_tables_folder,
+        pheno_folder = pheno_folder
+    output:
+        child_pheno_file = get_pheno_file("children"),
+        mother_pheno_file = get_pheno_file("mothers"),
+        father_pheno_file = get_pheno_file("fathers"),
+    conda:
+        "envs/r_pheno.yaml"
+    shell:
+        """
+        Rscript src/prepare_phenotype_files.R {params.pheno_tables_folder} {params.pheno_folder} {input.plink_fam}
+        """
+
+
+rule filter_mac:
+    'Filter mac for Step 1 of Regenie'
+    input:
+        plink_bed = plink_stem + '.bed'
+    params:
+        plink_stem = plink_stem,
+        best_snps = best_snps,
+        variant_stem = os.path.join(regenie_step1_folder, "best_snps_mac500")
+    output:
+        variant_list = os.path.join(regenie_step1_folder, "best_snps_mac500.snplist")
+    conda:
+        "envs/plink_2.yaml"
+    shell:
+        """
+        plink2 \
+        --bfile {params.plink_stem} \
+        --extract {params.best_snps} \
+        --mac 500 \
+        --write-snplist \
+        --out {params.variant_stem}
+        """
+
+rule regenie_step1:
+    'Step 1 of Regenie'
+    input:
+        plink_bed = plink_stem + '.bed',
+        pheno_file = lambda wildcards: get_pheno_file(wildcards.population),
+        samples_list = lambda wildcards: get_sample_id_file(wildcards.population),
+        variant_list = os.path.join(regenie_step1_folder, "best_snps_mac500.snplist")
+    output:
+        output_file = os.path.join(regenie_step1_folder, 'step1_pop_{population}_pheno_{analysis}_pred.list')
+    params:
+        plink_stem = plink_stem,
+        temp_output_file = temp(os.path.join(regenie_step1_folder, 'step1_{population}_{analysis}_temp')),
+        pheno_column = lambda wildcards: get_pheno_column(wildcards.analysis),
+        pheno_binary = lambda wildcards: get_binary_option_step1(wildcards.analysis),
+        pheno_covariates = lambda wildcards: get_covariates(wildcards.analysis, wildcards.population),
+        parameters_output = os.path.join(regenie_step1_folder, 'step1_pop_{population}_pheno_{analysis}')
+    conda:
+        "envs/regenie_3.2.yaml"
+    threads: 10
+    shell:
+        """
+        regenie \
+        --step 1 \
+        --threads {threads} \
+        --gz \
+        --bed {params.plink_stem} \
+        --phenoFile {input.pheno_file} \
+        --phenoCol {params.pheno_column} \
+        --covarFile {input.pheno_file} \
+        --strict \
+        {params.pheno_covariates} \
+        --keep {input.samples_list} \
+        --extract {input.variant_list} \
+        --bsize 5000 \
+        {params.pheno_binary} \
+        --loocv \
+        --out {params.parameters_output}
+        """
+
+rule REGENIE_step2:
+    'Step 2 of Regenie'
+    input:
+        plink_bed = plink_stem + '.bed',
+        pheno_file = lambda wildcards: get_pheno_file(wildcards.population),
+        step1_file = os.path.join(regenie_step1_folder, 'step1_pop_{population}_pheno_{analysis}_pred.list'),
+        samples_list = lambda wildcards: get_sample_id_file(wildcards.population)
+    output:
+        output_file = os.path.join(results_folder, '{analysis}', 'step2_pop_{population}_pheno_{analysis}.regenie.gz'),
+    params:
+        plink_stem = plink_stem,
+        pheno_column = lambda wildcards: get_pheno_column(wildcards.analysis),
+        pheno_binary = lambda wildcards: get_binary_option_step2(wildcards.analysis),
+        pheno_covariates = lambda wildcards: get_covariates(wildcards.analysis, wildcards.population),
+        output_stem = os.path.join(results_folder, '{analysis}', 'step2_pop_{population}_pheno')
+    conda:
+        "envs/regenie_3.2.yaml"
+    threads: 10
+    shell:
+        """
+
+        regenie \
+        --step 2 \
+        --threads {threads} \
+        --bed {params.plink_stem} \
+        --sample {input.samples_list} \
+        --phenoFile {input.pheno_file} \
+        --phenoCol {params.pheno_column} \
+        --covarFile {input.pheno_file} \
+        {params.pheno_covariates} \
+        --bsize 400 \
+        {params.pheno_binary} \
+        --minINFO 0.6 \
+        --strict \
+        --gz \
+        --pred {input.step1_file} \
+        --out {params.output_stem} \
+        
+        REGENIE_FILE={params.output_stem}_{params.pheno_column}.regenie.gz
+        if [[ -f $REGENIE_FILE ]];then
+            mv $REGENIE_FILE {output.output_file}
+        else
+            echo "Regenie output file ($REGENIE_FILE) not found"
+        fi
+        
+        """
+#        --verbose # Include to have verbose output in step 2
+
+rule regenie_to_cojo:
+    'Format Regenie for cojo'
+    input:
+        regenie_file = os.path.join(results_folder, '{analysis}', 'step2_pop_{population}_pheno_{analysis}.regenie.gz')
+    params:
+        cojo_folder = os.path.join(results_folder, '{analysis}', 'cojo', 'tmp'),
+        locus_zoom_folder = os.path.join(results_folder, 'lz'),
+        pheno_file = lambda wildcards: get_pheno_file(wildcards.population),
+        pheno_column = lambda wildcards: get_pheno_column(wildcards.analysis),
+    output:
+        output_file = os.path.join(results_folder, '{analysis}', 'cojo', 'tmp', 'step2_pop_{population}_pheno_{analysis}.regenie_toCoJo.done')
+    conda:
+        "envs/r_gwas.yaml"
+    threads: 4
+    shell:
+        """
+        Rscript src/cojo/regenie_to_cojo.R {input.regenie_file} {params.cojo_folder} {params.pheno_file} {params.pheno_column} {params.locus_zoom_folder}
+        """
+
+rule cojo:
+    'Run cojo'
+    input:
+        regenie_to_cojo_done_file = os.path.join(results_folder,'{analysis}','cojo','tmp','step2_pop_{population}_pheno_{analysis}.regenie_toCoJo.done')
+    params:
+        input_file = os.path.join(results_folder, '{analysis}', 'cojo', 'tmp', 'step2_pop_{population}_pheno_{analysis}.regenie.chr{chr}.ma'),
+        snp_list_file = os.path.join(results_folder, '{analysis}', 'cojo', 'tmp', 'step2_pop_{population}_pheno_{analysis}.regenie.chr{chr}.snpList'),
+        plink_stem = plink_stem,
+        regenie_file = os.path.join(results_folder, '{analysis}', 'step2_pop_{population}_pheno_{analysis}.regenie.gz'),
+        samples_list = lambda wildcards: get_unrelated_sample_id_file(wildcards.population),
+        cojo_output_file = os.path.join(results_folder, '{analysis}', 'cojo', 'tmp', 'step2_pop_{population}_pheno_{analysis}.regenie.chr{chr}'),
+        no_snp_file = os.path.join(results_folder, '{analysis}', 'cojo', 'tmp', 'step2_pop_{population}_pheno_{analysis}.regenie.chr{chr}.no_snp')
+    output:
+        cojo_done_file = os.path.join(results_folder, '{analysis}', 'cojo', 'tmp', 'step2_pop_{population}_pheno_{analysis}.regenie.chr{chr}.done')
+    conda:
+        "envs/gcta_1.93.2beta.yaml"
+    threads: 2
+    shell:
+        """
+        NO_SNP_FILE={params.no_snp_file}
+        if [[ -f $NO_SNP_FILE ]];then
+            echo "COJO skipped: $NO_SNP_FILE"
+            touch {output.cojo_done_file}
+        else
+            echo "run COJO: $NO_SNP_FILE"
+            gcta64 \
+                --bfile {params.plink_stem} \
+                --cojo-file {params.input_file} \
+                --keep {params.samples_list} \
+                --chr {wildcards.chr} \
+                --extract {params.snp_list_file} \
+                --cojo-slct \
+                --cojo-p 5e-8 \
+                --cojo-wind 500 \
+                --cojo-collinear 0.9 \
+                --diff-freq 0.2 \
+                --thread-num {threads} \
+                --out {params.cojo_output_file}
+            touch {output.cojo_done_file}
+        fi
+        """
+
+rule cojo_merge:
+    'Merge the results from COJO'
+    input:
+        input_file = lambda wildcards: get_cojo_chr_files(os.path.join(results_folder, '{analysis}', 'cojo', 'tmp', 'step2_pop_{population}_pheno_{analysis}.regenie.chr{chr}.done'))
+    params:
+        input_stem = os.path.join(results_folder, '{analysis}', 'cojo', 'tmp', 'step2_pop_{population}_pheno_{analysis}.regenie.chr_wildcard_chr'),
+        output_stem = os.path.join(results_folder, '{analysis}', 'cojo', 'step2_pop_{population}_pheno_{analysis}')
+    output:
+        output_file = os.path.join(results_folder, '{analysis}', 'cojo', 'step2_pop_{population}_pheno_{analysis}.jma.cojo')
+    conda:
+        "envs/r_gwas.yaml"
+    threads: 1
+    shell:
+        """
+        Rscript src/cojo/merge_cojo.R {params.input_stem} {params.output_stem}
+        """
+
+rule association_qc_no_cojo:
+    'Writes documentation on the association results'
+    input:
+        regenie_file = os.path.join(results_folder, '{analysis}', 'step2_pop_{population}_pheno_{analysis}.regenie.gz')
+    output:
+        output_file = os.path.join('docs', 'regenie_no_cojo', 'pop_{population}_pheno_{analysis}', 'pop_{population}_pheno_{analysis}.md')
+    conda:
+        "envs/r_gwas.yaml"
+    threads: 1
+    shell:
+        """
+        Rscript src/association_qc_no_cojo.R {input.regenie_file}
+        """
+
+rule association_qc:
+    'Writes documentation on the association results'
+    input:
+        regenie_file = os.path.join(results_folder, '{analysis}', 'step2_pop_{population}_pheno_{analysis}.regenie.gz'),
+        cojo_file = os.path.join(results_folder, '{analysis}', 'cojo', 'step2_pop_{population}_pheno_{analysis}.jma.cojo')
+    output:
+        output_file = os.path.join('docs', 'regenie', 'pop_{population}_pheno_{analysis}', 'pop_{population}_pheno_{analysis}.md')
+    conda:
+        "envs/r_gwas.yaml"
+    threads: 1
+    shell:
+        """
+        Rscript src/association_qc.R {input.regenie_file} {input.cojo_file}
+        """
+
+rule write_md:
+    'Writes md files to link the different results'
+    input:
+        md_files = expand(os.path.join('docs','regenie','pop_{population}_pheno_{analysis}','pop_{population}_pheno_{analysis}.md'), analysis = analyses_names, population = populations)
+    params:
+        pheno_folder = pheno_folder,
+        config_file = config_file
+    output:
+        output_file = 'README.md'
+    conda:
+        "envs/r_gwas.yaml"
+    threads: 1
+    shell:
+        """
+        Rscript src/write_md.R {params.config_file} {params.pheno_folder}
+        """
+
+
+
