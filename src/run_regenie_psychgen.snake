@@ -218,6 +218,7 @@ rule pheno_file:
         father_pheno_file_nausea_vomiting = get_pheno_file("fathers_nausea_vomiting"),
     conda:
         "envs/r_pheno.yaml"
+    threads: 1
     shell:
         """
         Rscript src/prepare_phenotype_files.R {params.pheno_tables_folder} {params.pheno_folder} {input.plink_fam}
@@ -236,6 +237,7 @@ rule filter_mac:
         variant_list = os.path.join(regenie_step1_folder, "best_snps_mac500.snplist")
     conda:
         "envs/plink_2.yaml"
+    threads: 1
     shell:
         """
         plink2 \
