@@ -121,8 +121,7 @@ pheno_table_gwas_child <- fam_table %>%
       select(
         IID = child_sentrix_id,
         child_batch,
-        sex,
-        umbilical_cord_length
+        hospitalized_prolonged_nausea_vomiting
       ),
     by = "IID"
   )
@@ -144,8 +143,7 @@ pheno_table_gwas_mother <- fam_table %>%
       select(
         IID = mother_sentrix_id,
         mother_batch,
-        sex,
-        umbilical_cord_length
+        hospitalized_prolonged_nausea_vomiting
       ),
     by = "IID",
     multiple = "any"
@@ -168,8 +166,7 @@ pheno_table_gwas_father <- fam_table %>%
       select(
         IID = father_sentrix_id,
         father_batch,
-        sex,
-        umbilical_cord_length
+        hospitalized_prolonged_nausea_vomiting
       ),
     by = "IID",
     multiple = "any"
