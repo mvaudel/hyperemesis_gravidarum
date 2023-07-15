@@ -1,0 +1,638 @@
+# Hyperemesis Gravidarum
+
+This document browses the phenotypes associated with Hyperemesis Gravidarum in MoBa.
+
+### Libraries
+
+```{r}
+
+library(conflicted)
+library(janitor)
+library(glue)
+library(tidyverse)
+library(ggplot2)
+library(scico)
+library(ggside)
+
+# Solve name space conflicts
+conflicts_prefer(dplyr::filter)
+
+# General parameters
+theme_set(theme_bw(base_size = 14))
+
+```
+
+### Phenotypes
+
+```{r}
+
+pregnancy <- read.table(
+  file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_23-07-12/pregnancy.gz",
+  header = T,
+  sep = "\t"
+)
+
+
+```
+
+### Exclusion criteria
+
+```{r}
+
+phenotypes <- pregnancy %>% 
+  filter(
+    is.na(plural_birth) & (!is.na(child_sentrix_id) | !is.na(mother_sentrix_id))
+  )
+
+```
+
+### Number of samples
+
+```{r}
+
+# Nausea
+
+phenotypes <- phenotypes %>% 
+  mutate(
+    nausea_any = ifelse(!is.na(nausea_before_4w) | !is.na(nausea_5w_8w) | !is.na(nausea_9w_12w) | !is.na(nausea_13w_15w) | !is.na(nausea_13w_16w) | !is.na(nausea_17w_20w) | !is.na(nausea_21w_24w) | !is.na(nausea_25w_28w) | !is.na(nausea_after_29w), 1, NA),
+    vomiting_any = ifelse(!is.na(vomiting_before_4w) | !is.na(vomiting_5w_8w) | !is.na(vomiting_9w_12w) | !is.na(vomiting_13w_15w), 1, NA),
+    long_term_nausea_vomiting_any = ifelse(!is.na(long_term_nausea_vomiting_13w_16w) | !is.na(long_term_nausea_vomiting_17w_20w) | !is.na(long_term_nausea_vomiting_21w_24w) | !is.na(long_term_nausea_vomiting_25w_28w) | !is.na(long_term_nausea_vomiting_after_29w), 1, NA)
+  )
+
+nausea_columns <- c(
+  "nausea_any",
+    "nausea_before_4w",
+  "nausea_5w_8w",
+  "nausea_9w_12w",
+  "nausea_13w_15w",
+  "nausea_13w_16w",
+  "nausea_17w_20w",
+  "nausea_21w_24w",
+  "nausea_25w_28w",
+  "nausea_after_29w"
+  )
+
+nausea_weeks <- c("Any", "0 - 4", "5 - 8", "9 - 12", "13 - 15", "13 - 16", "17 - 20", "21 - 24", "25 - 28", "After 29")
+
+nausea_n <- numeric(length(nausea_columns))
+
+for (i in 1:length(nausea_columns)) {
+  
+  nausea_n[i] <- sum(!is.na(phenotypes[[nausea_columns[i]]]))
+  
+}
+
+
+# Vomiting
+  
+vomiting_columns <- c(
+  "vomiting_any",
+  "vomiting_before_4w",
+  "vomiting_5w_8w",
+  "vaginal_thrush_9w_12w",
+  "vomiting_13w_15w"
+  )
+
+vomiting_weeks <- c("Any", "0 - 4", "5 - 8", "9 - 12", "13 - 15")
+
+vomiting_n <- numeric(length(vomiting_columns))
+
+for (i in 1:length(vomiting_columns)) {
+  
+  vomiting_n[i] <- sum(!is.na(phenotypes[[vomiting_columns[i]]]))
+  
+}
+
+
+# Long-term nausea vomiting
+  
+long_term_nausea_vomiting_columns <- c(
+  "long_term_nausea_vomiting_any",
+  "long_term_nausea_vomiting_13w_16w",
+  "long_term_nausea_vomiting_17w_20w",
+  "long_term_nausea_vomiting_21w_24w",
+  "long_term_nausea_vomiting_25w_28w",
+  "long_term_nausea_vomiting_after_29w"
+  )
+long_term_nausea_vomiting_weeks <- c("Any", "13 - 16", "17 - 20", "21 - 24", "25 - 28", "After 29")
+
+long_term_nausea_vomiting_n <- numeric(length(long_term_nausea_vomiting_columns))
+
+for (i in 1:length(long_term_nausea_vomiting_columns)) {
+  
+  long_term_nausea_vomiting_n[i] <- sum(!is.na(phenotypes[[long_term_nausea_vomiting_columns[i]]]))
+  
+}
+
+
+# Hospitalized
+  
+hospitalized_prolonged_nausea_vomiting_columns <- c(
+  "hospitalized_prolonged_nausea_vomiting",
+  "hospitalized_prolonged_nausea_vomiting_0_4w",
+  "hospitalized_prolonged_nausea_vomiting_5_8w",
+  "hospitalized_prolonged_nausea_vomiting_9_12w",
+  "hospitalized_prolonged_nausea_vomiting_13_16w",
+  "hospitalized_prolonged_nausea_vomiting_17_20w",
+  "hospitalized_prolonged_nausea_vomiting_21_24w",
+  "hospitalized_prolonged_nausea_vomiting_25_28w",
+  "hospitalized_prolonged_nausea_vomiting_after_29w"
+  )
+hospitalized_prolonged_nausea_vomiting_weeks <- c("Any", "0 - 4", "5 - 8", "9 - 12", "13 - 16", "17 - 20", "21 - 24", "25 - 28", "After 29")
+
+hospitalized_prolonged_nausea_vomiting_n <- numeric(length(hospitalized_prolonged_nausea_vomiting_columns))
+
+for (i in 1:length(hospitalized_prolonged_nausea_vomiting_columns)) {
+  
+  hospitalized_prolonged_nausea_vomiting_n[i] <- sum(!is.na(phenotypes[[hospitalized_prolonged_nausea_vomiting_columns[i]]]))
+  
+}
+
+
+# nausea q2
+  
+nausea_q2_columns <- c(
+  "nausea_q2",
+  "nausea_eat_more_or_less_q2",
+  "nausea_week_most_bothered_from_q2",
+  "nausea_week_most_bothered_to_q2",
+  "nausea_week_most_bothered_still_q2",
+  "vomiting_q2",
+  "vomiting_week_from_q2",
+  "vomiting_week_to_q2",
+  "vomiting_week_still_q2"
+  )
+
+
+```
+
+Make data frames
+
+```{r}
+
+all_weeks <- c("Any", "0 - 4", "5 - 8", "9 - 12", "13 - 15", "13 - 16", "17 - 20", "21 - 24", "25 - 28", "After 29")
+
+nausea <- data.frame(
+  phenotype = nausea_columns,
+  week = nausea_weeks,
+  n = nausea_n,
+  phenotype = "Nausea"
+) %>% 
+  mutate(
+    week_factor = factor(week, all_weeks)
+  )
+
+vomiting <- data.frame(
+  phenotype = vomiting_columns,
+  week = vomiting_weeks,
+  n = vomiting_n,
+  phenotype = "Vomiting"
+) %>% 
+  mutate(
+    week_factor = factor(week, all_weeks)
+  )
+
+long_term_nausea_vomiting <- data.frame(
+  phenotype = long_term_nausea_vomiting_columns,
+  week = long_term_nausea_vomiting_weeks,
+  n = long_term_nausea_vomiting_n,
+  phenotype = "Long-term nausea vomiting"
+) %>% 
+  mutate(
+    week_factor = factor(week, all_weeks)
+  )
+
+hospitalized_prolonged_nausea_vomiting <- data.frame(
+  phenotype = hospitalized_prolonged_nausea_vomiting_columns,
+  week = hospitalized_prolonged_nausea_vomiting_weeks,
+  n = hospitalized_prolonged_nausea_vomiting_n,
+  phenotype = "Hospitalized due to prolonged nausea vomiting"
+) %>% 
+  mutate(
+    week_factor = factor(week, all_weeks)
+  )
+
+```
+
+Plot nausea
+
+```{r}
+
+ggplot(
+  data = nausea
+) +
+  geom_col(
+    mapping = aes(
+      x = week_factor,
+      y = n
+    ),
+    fill = "grey80",
+    col = "grey20"
+  ) +
+  scale_x_discrete(
+    name = "Week"
+  ) +
+  scale_y_continuous(
+    name = "Number of pregnancies",
+    expand = expansion(
+      mult = c(0, 0.05)
+      )
+  ) + 
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+```
+
+Plot vomiting
+
+```{r}
+
+ggplot(
+  data = vomiting
+) +
+  geom_col(
+    mapping = aes(
+      x = week_factor,
+      y = n
+    ),
+    fill = "grey80",
+    col = "grey20"
+  ) +
+  scale_x_discrete(
+    name = "Week"
+  ) +
+  scale_y_continuous(
+    name = "Number of pregnancies",
+    expand = expansion(
+      mult = c(0, 0.05)
+      )
+  ) + 
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+```
+
+Long-term nausea vomiting
+
+```{r}
+
+ggplot(
+  data = long_term_nausea_vomiting
+) +
+  geom_col(
+    mapping = aes(
+      x = week_factor,
+      y = n
+    ),
+    fill = "grey80",
+    col = "grey20"
+  ) +
+  scale_x_discrete(
+    name = "Week"
+  ) +
+  scale_y_continuous(
+    name = "Number of pregnancies",
+    expand = expansion(
+      mult = c(0, 0.05)
+      )
+  ) + 
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+```
+
+Hospitalized due to prolonged nausea vomiting
+
+```{r}
+
+ggplot(
+  data = hospitalized_prolonged_nausea_vomiting
+) +
+  geom_col(
+    mapping = aes(
+      x = week_factor,
+      y = n
+    ),
+    fill = "grey80",
+    col = "grey20"
+  ) +
+  scale_x_discrete(
+    name = "Week"
+  ) +
+  scale_y_continuous(
+    name = "Number of pregnancies",
+    expand = expansion(
+      mult = c(0, 0.05)
+      )
+  ) + 
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+```
+
+```{r}
+
+phenotypes <- phenotypes %>% 
+  mutate(
+    nausea_eat_more_or_less_q2 = ifelse(is.na(nausea_eat_more_or_less_q2), "No answer", nausea_eat_more_or_less_q2),
+    nausea_eat_more_or_less_q2 = ifelse(nausea_eat_more_or_less_q2 == "More than 1 check box filled in", NA, nausea_eat_more_or_less_q2)
+  ) %>% 
+  mutate(
+    nausea_eat_more_or_less_q2_factor = factor(nausea_eat_more_or_less_q2, levels = c("Less", "No answer", "More"))
+  )
+
+ggplot(
+  data = phenotypes
+) +
+  geom_bar(
+    mapping = aes(
+      x = nausea_eat_more_or_less_q2_factor
+    ),
+    fill = "grey80",
+    col = "grey20"
+  ) +
+  scale_x_discrete() +
+  scale_y_continuous(
+    name = "Number of pregnancies",
+    expand = expansion(
+      mult = c(0, 0.05)
+      )
+  ) + 
+  theme(
+    axis.title.x = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+```
+
+```{r}
+
+
+nausea_vomiting_q2 <- data.frame(
+  phenotype = c("Nausea", "Nausea\nstill bothered", "Vomiting", "Vomiting\nstill bothered"),
+  n = c(
+    sum(!is.na(phenotypes$nausea_q2) & phenotypes$nausea_q2 == "Yes"), 
+    sum(!is.na(phenotypes$nausea_week_most_bothered_still_q2)), 
+    sum(!is.na(phenotypes$vomiting_q2) & phenotypes$vomiting_q2 == "Yes"), 
+    sum(!is.na(phenotypes$vomiting_week_still_q2))
+  )
+)
+
+ggplot(
+  data = nausea_vomiting_q2
+) +
+  geom_col(
+    mapping = aes(
+      x = phenotype,
+      y = n
+    ),
+    fill = "grey80",
+    col = "grey20"
+  ) +
+  scale_x_discrete() +
+  scale_y_continuous(
+    name = "Number of pregnancies",
+    expand = expansion(
+      mult = c(0, 0.05)
+      )
+  ) + 
+  theme(
+    axis.title.x = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+```
+
+```{r}
+
+
+nausea_vomiting_q2 <- data.frame(
+  phenotype = rep(c("Nausea from", "Nausea to", "Vomiting from", "Vomiting to"), each = nrow(phenotypes)),
+  week = c(phenotypes$nausea_week_most_bothered_from_q2, phenotypes$nausea_week_most_bothered_to_q2, phenotypes$vomiting_week_from_q2, phenotypes$vomiting_week_to_q2)
+) %>% 
+  mutate(
+    phenotype_factor = factor(phenotype, levels = rev(c("Nausea from", "Vomiting from", "Nausea to", "Vomiting to")))
+  ) %>% 
+  filter(
+    week < 45
+  )
+
+ggplot(
+  data = nausea_vomiting_q2
+) +
+  geom_violin(
+    mapping = aes(
+      x = week,
+      y = phenotype_factor
+    ),
+    fill = "grey80",
+    col = "grey20"
+  ) +
+  scale_x_continuous(
+    name = "Week") +
+  theme(
+    axis.title.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank()
+  )
+
+```
+
+```{r}
+
+phenotypes <- phenotypes %>% 
+  mutate(
+    nausea_duration = ifelse(is.na(nausea_week_most_bothered_from_q2) | is.na(nausea_week_most_bothered_to_q2) | nausea_week_most_bothered_to_q2 < nausea_week_most_bothered_from_q2, NA, nausea_week_most_bothered_to_q2 - nausea_week_most_bothered_from_q2),
+    vomiting_duration = ifelse(is.na(vomiting_week_from_q2) | is.na(vomiting_week_to_q2) | vomiting_week_to_q2 < vomiting_week_from_q2, NA, vomiting_week_to_q2 - vomiting_week_from_q2)
+  )
+
+# nausea q2
+
+nausea_vomiting_duration_q2 <- data.frame(
+  phenotype = rep(c("Nausea duration", "Vomiting duration"), each = nrow(phenotypes)),
+  week = c(phenotypes$nausea_duration, phenotypes$vomiting_duration)
+) %>% 
+  mutate(
+    phenotype_factor = factor(phenotype, levels = rev(c("Nausea duration", "Vomiting duration")))
+  )
+
+ggplot(
+  data = nausea_vomiting_duration_q2
+) +
+  geom_violin(
+    mapping = aes(
+      x = week,
+      y = phenotype
+    ),
+    fill = "grey80",
+    col = "grey20"
+  ) +
+  scale_x_continuous(
+    name = "Duration in weeks") +
+  theme(
+    axis.title.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank()
+  )
+
+```
+
+```{r}
+
+ggplot(
+  data = phenotypes
+) +
+  geom_point(
+    mapping = aes(
+      x = nausea_week_most_bothered_from_q2,
+      y = nausea_week_most_bothered_to_q2
+    ),
+    alpha = 0.1,
+    col = "grey20"
+  ) +
+  geom_density2d(
+    mapping = aes(
+      x = nausea_week_most_bothered_from_q2,
+      y = nausea_week_most_bothered_to_q2
+    ),
+    col = "darkblue"
+  ) +
+  geom_xsidedensity(
+    mapping = aes(
+      x = nausea_week_most_bothered_from_q2,
+      y = after_stat(density)
+    ),
+    fill = "grey80"
+  ) +
+  geom_ysidedensity(
+    mapping = aes(
+      x = after_stat(density),
+      y = nausea_week_most_bothered_to_q2
+    ),
+    fill = "grey80"
+  ) +
+  scale_x_continuous(
+    name = "Nausea most bothered from week"
+    ) +
+  scale_y_continuous(
+    name = "Nausea most bothered to week"
+    ) +
+  theme(
+    ggside.panel.scale = 0.15,
+    ggside.axis.ticks = element_blank(),
+    ggside.axis.text = element_blank(),
+    ggside.panel.grid = element_blank(),
+    ggside.panel.background = element_blank(),
+    ggside.panel.spacing = unit(0, "pt")
+    )
+
+```
+
+```{r}
+
+ggplot(
+  data = phenotypes
+) +
+  geom_point(
+    mapping = aes(
+      x = vomiting_week_from_q2,
+      y = vomiting_week_to_q2
+    ),
+    alpha = 0.1,
+    col = "grey20"
+  ) +
+  geom_density2d(
+    mapping = aes(
+      x = vomiting_week_from_q2,
+      y = vomiting_week_to_q2
+    ),
+    col = "darkblue"
+  ) +
+  geom_xsidedensity(
+    mapping = aes(
+      x = vomiting_week_from_q2,
+      y = after_stat(density)
+    ),
+    fill = "grey80"
+  ) +
+  geom_ysidedensity(
+    mapping = aes(
+      x = after_stat(density),
+      y = vomiting_week_to_q2
+    ),
+    fill = "grey80"
+  ) +
+  scale_x_continuous(
+    name = "Vomiting most bothered from week"
+    ) +
+  scale_y_continuous(
+    name = "Vomiting most bothered to week"
+    ) +
+  theme(
+    ggside.panel.scale = 0.15,
+    ggside.axis.ticks = element_blank(),
+    ggside.axis.text = element_blank(),
+    ggside.panel.grid = element_blank(),
+    ggside.panel.background = element_blank(),
+    ggside.panel.spacing = unit(0, "pt")
+    )
+
+```
+
+```{r}
+
+ggplot(
+  data = phenotypes
+) +
+  geom_point(
+    mapping = aes(
+      x = nausea_duration,
+      y = vomiting_duration
+    ),
+    alpha = 0.1,
+    col = "grey20"
+  ) +
+  geom_density2d(
+    mapping = aes(
+      x = nausea_duration,
+      y = vomiting_duration
+    ),
+    col = "darkblue"
+  ) +
+  geom_xsidedensity(
+    mapping = aes(
+      x = nausea_duration,
+      y = after_stat(density)
+    ),
+    fill = "grey80"
+  ) +
+  geom_ysidedensity(
+    mapping = aes(
+      x = after_stat(density),
+      y = vomiting_duration
+    ),
+    fill = "grey80"
+  ) +
+  scale_x_continuous(
+    name = "Nausea most bothered duration"
+    ) +
+  scale_y_continuous(
+    name = "Vomiting most bothered duration"
+    ) +
+  theme(
+    ggside.panel.scale = 0.15,
+    ggside.axis.ticks = element_blank(),
+    ggside.axis.text = element_blank(),
+    ggside.panel.grid = element_blank(),
+    ggside.panel.background = element_blank(),
+    ggside.panel.spacing = unit(0, "pt")
+    )
+
+```
