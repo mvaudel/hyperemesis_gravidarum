@@ -31,7 +31,7 @@ args <- commandArgs(TRUE)
 
 if (length(args) != 3) {
   
-  stop(paste0("Three command line arguments expected: regenie results file path. ", length(args), " found."))
+  stop(paste0("Three command line arguments expected. ", length(args), " found."))
   
 }
 
@@ -64,76 +64,27 @@ if (!file.exists(fam_file)) {
 
 print(paste0(Sys.time(), " - Loading phenotypes from '", tables_folder, "'"))
 
-delivery_table <- read.table(
-  file = file.path(tables_folder, "delivery.gz"),
-  header = T,
-  sep = "\t"
-) %>% 
-  filter(
-    !is.na(child_sentrix_id) | !is.na(mother_sentrix_id) | !is.na(father_sentrix_id)
-  )
-
-anthropometrics_table <- read.table(
-  file = file.path(tables_folder, "child_anthropometrics.gz"),
-  header = T,
-  sep = "\t"
-) %>% 
-  filter(
-    !is.na(child_sentrix_id) | !is.na(mother_sentrix_id) | !is.na(father_sentrix_id)
-  ) %>% 
-  select(
-    -preg_id, -rank_siblings, -mother_id, -father_id, 
-    -child_sentrix_id, -mother_sentrix_id, -father_sentrix_id, 
-    -unrelated_children, -child_batch, -mother_batch, -father_batch, 
-    -pregnancy_duration_term, -pregnancy_duration_preterm, -sex
-  )
-
 pregnancy_table <- read.table(
-  file = file.path(tables_folder, "pregnancy.gz"),
+  file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_23-07-12/pregnancy.gz",
   header = T,
   sep = "\t"
-) %>% 
-  filter(
-    !is.na(child_sentrix_id) | !is.na(mother_sentrix_id) | !is.na(father_sentrix_id)
-  ) %>% 
-  select(
-    -preg_id, -rank_siblings, -mother_id, -father_id, 
-    -child_sentrix_id, -mother_sentrix_id, -father_sentrix_id, 
-    -unrelated_children, -child_batch, -mother_batch, -father_batch, 
-    -pregnancy_duration_term, -pregnancy_duration_preterm, -sex
-  )
+)
 
-print(paste0(Sys.time(), " - Merging and exclusion criteria"))
+# All pregnancies did at least a trimester, no exclusion criterion to use
 
-pheno_table <- delivery_table %>% 
-  inner_join(
-    anthropometrics_table,
-    by = "child_id"
-  ) %>% 
-  inner_join(
-    pregnancy_table,
-    by = "child_id"
-  ) %>% 
-  filter(
-    pregnancy_duration_term == 1 & !is.na(umbilical_cord_length) & umbilical_cord_length > 0
-  )
-
-# Correct/Remove outliers
+# Format variables of interest
 
 print(paste0(Sys.time(), " - Handling of outliers"))
 
-pheno_table <- pheno_table %>% 
+pheno_table <- pregnancy_table %>% 
   mutate(
-    umbilical_cord_length = ifelse(umbilical_cord_length >= 250, umbilical_cord_length / 10, umbilical_cord_length),
-    umbilical_cord_length = ifelse(umbilical_cord_length <= 10, umbilical_cord_length * 10, umbilical_cord_length)
-  )
-
-mean <- mean(pheno_table$umbilical_cord_length)
-sd <- sd(pheno_table$umbilical_cord_length)
-
-pheno_table <- pheno_table %>% 
-  mutate(
-    umbilical_cord_length = ifelse(abs(umbilical_cord_length - mean) > 5 * sd, NA, umbilical_cord_length)
+    hospitalized_prolonged_nausea_vomiting = ifelse(is.na(hospitalized_prolonged_nausea_vomiting), 0, 1),
+    nausea_q2 = ifelse(!is.na(nausea_q2) & nausea_q2 == "Yes", 1, 0),
+    vomiting_q2 = ifelse(!is.na(vomiting_q2) & vomiting_q2 == "Yes", 1, 0),
+    nausea_any = ifelse(nausea_q2 == 1 | !is.na(nausea_before_4w) | !is.na(nausea_5w_8w) | !is.na(nausea_9w_12w) | !is.na(nausea_13w_15w) | !is.na(nausea_13w_16w) | !is.na(nausea_17w_20w) | !is.na(nausea_21w_24w) | !is.na(nausea_25w_28w) | !is.na(nausea_after_29w), 1, 0),
+    vomiting_any = ifelse(vomiting_q2 == 1 | !is.na(vomiting_before_4w) | !is.na(vomiting_5w_8w) | !is.na(vomiting_9w_12w) | !is.na(vomiting_13w_15w), 1, 0),
+    long_term_nausea_vomiting_any = ifelse(!is.na(long_term_nausea_vomiting_13w_16w) | !is.na(long_term_nausea_vomiting_17w_20w) | !is.na(long_term_nausea_vomiting_21w_24w) | !is.na(long_term_nausea_vomiting_25w_28w) | !is.na(long_term_nausea_vomiting_after_29w), 1, 0),
+    nausea_vomiting = ifelse(nausea_any == 0 & vomiting_any == 0 & long_term_nausea_vomiting_any == 0, 0, 1)
   )
 
 
@@ -240,6 +191,19 @@ write.table(
   quote = F
 )
 
+pheno_table_gwas_child_nausea_vomiting <- pheno_table_gwas_child %>% 
+  filter(
+    nausea_vomiting == 1
+  )
+
+write.table(
+  x = pheno_table_gwas_child_nausea_vomiting,
+  file = file.path(gwas_pheno_folder, "pheno_child_nausea_vomiting"),
+  row.names = F, 
+  col.names = T, 
+  quote = F
+)
+
 write.table(
   x = pheno_table_gwas_mother,
   file = file.path(gwas_pheno_folder, "pheno_mother"),
@@ -248,9 +212,35 @@ write.table(
   quote = F
 )
 
+pheno_table_gwas_mother_nausea_vomiting <- pheno_table_gwas_mother %>% 
+  filter(
+    nausea_vomiting == 1
+  )
+
+write.table(
+  x = pheno_table_gwas_mother_nausea_vomiting,
+  file = file.path(gwas_pheno_folder, "pheno_mother_nausea_vomiting"),
+  row.names = F, 
+  col.names = T, 
+  quote = F
+)
+
 write.table(
   x = pheno_table_gwas_father,
   file = file.path(gwas_pheno_folder, "pheno_father"),
+  row.names = F, 
+  col.names = T, 
+  quote = F
+)
+
+pheno_table_gwas_father_nausea_vomiting <- pheno_table_gwas_father %>% 
+  filter(
+    nausea_vomiting == 1
+  )
+
+write.table(
+  x = pheno_table_gwas_father_nausea_vomiting,
+  file = file.path(gwas_pheno_folder, "pheno_father_nausea_vomiting"),
   row.names = F, 
   col.names = T, 
   quote = F

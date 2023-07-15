@@ -28,7 +28,7 @@ pheno_tables_folder = os.path.join("/mnt/archive/moba/pheno", pheno_version, phe
 pheno_folder = os.path.join(work_folder, 'pheno', pheno_version, pheno_release)
 
 # Genotype files
-moba_psychgen_folder = '/mnt/archive/moba/geno/MobaPsychgenReleaseMarch23/MoBaPsychGen_v1/'
+moba_psychgen_folder = '/mnt/archive/moba/geno/MobaPsychgenReleaseMarch23/MoBaPsychGen_v1'
 plink_stem = os.path.join(moba_psychgen_folder, 'MoBaPsychGen_v1-ec-eur-batch-basic-qc')
 best_snps = os.path.join(moba_psychgen_folder, '500k_N_genotyped_1+_info_0.97785.snps')
 
@@ -99,11 +99,11 @@ if not os.path.isdir(lz_folder):
 # Function to generate covariate commands
 def get_covariates(analysis, population):
     analysis_covariates = analyses[analysis]["covariates"]
-    if population == "children":
+    if population == "children" or population == "children_nausea_vomiting":
         covariates_population = default_covariates_child + analysis_covariates
-    elif population == "mothers":
+    elif population == "mothers" or population == "mothers_nausea_vomiting":
         covariates_population = default_covariates_mother + analysis_covariates
-    elif population == "fathers":
+    elif population == "fathers" or population == "fathers_nausea_vomiting":
         covariates_population = default_covariates_father + analysis_covariates
     else:
         raise Exception(f"No covariate found for population: '{population}'.")
@@ -143,31 +143,37 @@ def get_binary_option_step2(analysis):
 def get_pheno_file(population):
     if population == "children":
         return os.path.join(pheno_folder, "pheno_child")
+    elif population == "children_nausea_vomiting":
+        return os.path.join(pheno_folder, "pheno_child_nausea_vomiting")
     elif population == "mothers":
         return os.path.join(pheno_folder, "pheno_mother")
+    elif population == "mothers_nausea_vomiting":
+        return os.path.join(pheno_folder, "pheno_mother_nausea_vomiting")
     elif population == "fathers":
         return os.path.join(pheno_folder, "pheno_father")
+    elif population == "fathers_nausea_vomiting":
+        return os.path.join(pheno_folder, "pheno_father_nausea_vomiting")
     else:
         raise Exception(f"No pheno file implemented for population: '{population}'.")
 
 # Function to get the sample id file corresponding to the given population
 def get_sample_id_file(population):
-    if population == "children":
+    if population == "children" or population == "children_nausea_vomiting":
         return os.path.join(id_folder, "children_id_plink")
-    elif population == "mothers":
+    elif population == "mothers" or population == "mothers_nausea_vomiting":
         return os.path.join(id_folder, "mothers_id_plink")
-    elif population == "fathers":
+    elif population == "fathers" or population == "fathers_nausea_vomiting":
         return os.path.join(id_folder, "fathers_id_plink")
     else:
         raise Exception(f"No id file implemented for population: '{population}'.")
 
 # Function to get an unrelated sample id file corresponding to the given population in the plink format
 def get_unrelated_sample_id_file(population):
-    if population == "children":
+    if population == "children" or population == "children_nausea_vomiting":
         return os.path.join(id_folder, "children_id_unrelated_30k_plink")
-    elif population == "mothers":
+    elif population == "mothers" or population == "mothers_nausea_vomiting":
         return os.path.join(id_folder, "mothers_id_unrelated_30k_plink")
-    elif population == "fathers":
+    elif population == "fathers" or population == "fathers_nausea_vomiting":
         return os.path.join(id_folder, "fathers_id_unrelated_30k_plink")
     else:
         raise Exception(f"No id file implemented for population: '{population}'.")
