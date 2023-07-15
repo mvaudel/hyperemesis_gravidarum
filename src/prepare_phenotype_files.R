@@ -70,7 +70,14 @@ pregnancy_table <- read.table(
   sep = "\t"
 )
 
-# All pregnancies did at least a trimester, no exclusion criterion to use
+# Exclusion criteria
+
+print(paste0(Sys.time(), " - Exclusion criteria"))
+
+pregnancy_table <- pregnancy_table %>%
+  filter(
+    is.na(plural_birth) & pregnancy_duration > 90
+  )
 
 # Format variables of interest
 

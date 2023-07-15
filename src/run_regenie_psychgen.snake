@@ -33,7 +33,7 @@ plink_stem = os.path.join(moba_psychgen_folder, 'MoBaPsychGen_v1-ec-eur-batch-ba
 best_snps = os.path.join(moba_psychgen_folder, '500k_N_genotyped_1+_info_0.97785.snps')
 
 # id files
-id_folder = '/mnt/archive/moba/pheno/v12/pheno_anthropometrics_23-05-28/id'
+id_folder = os.path.join(pheno_tables_folder, 'id')
 
 # Result folders
 regenie_step1_folder = os.path.join(work_folder, 'regenie', 'step_1')
@@ -209,8 +209,11 @@ rule pheno_file:
         pheno_folder = pheno_folder
     output:
         child_pheno_file = get_pheno_file("children"),
+        child_pheno_file_nausea_vomiting = get_pheno_file("children_nausea_vomiting"),
         mother_pheno_file = get_pheno_file("mothers"),
+        mother_pheno_file_nausea_vomiting = get_pheno_file("mothers_nausea_vomiting"),
         father_pheno_file = get_pheno_file("fathers"),
+        father_pheno_file_nausea_vomiting = get_pheno_file("fathers_nausea_vomiting"),
     conda:
         "envs/r_pheno.yaml"
     shell:
