@@ -1,23 +1,25 @@
 # Parameters for the pipeline.
 
-id: umbilical_cord_length
-name: Umbilical cord length
-description: Genetic analyses of umbilical cord length in the [Norwegian Mother, Father and Child Cohort Study (MoBa)](https://www.fhi.no/en/ch/studies/moba).
-suffix: 23-06-26
+id: hyperemesis_gravidarum
+name: Hyperemesis Gravidarum
+description: Genetic analyses of hyperemesis gravidarum in the [Norwegian Mother, Father and Child Cohort Study (MoBa)](https://www.fhi.no/en/ch/studies/moba).
+suffix: 23-07-15
 pheno_version: v12
-pheno_release: pheno_anthropometrics_23-05-28
+pheno_release: pheno_anthropometrics_23-07-12
 
 populations:
   - children
+  - children_nausea_vomiting
   - mothers
+  - mothers_nausea_vomiting
   - fathers
+  - fathers_nausea_vomiting
 
 analyses:
-  umbilical_cord_length_sex:
-      name: Umbilical cord length
-      description: GWAS of umibilical cord length using sex as covariate.
-      phenotype: umbilical_cord_length
-      phenotype_name: umbilical cord length
-      phenotype_type: quantitative
+  hg_vs_all:
+      name: Hyperemesis gravidarum
+      description: GWAS of mothers hospitalized due to prolonged nausea and vomiting.
+      phenotype: hospitalized_prolonged_nausea_vomiting
+      phenotype_name: hospitalized due to prolonged nausea and vomiting
+      phenotype_type: binary
       covariates:
-        - sex
