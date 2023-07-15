@@ -16,7 +16,7 @@ populations:
   - fathers_nausea_vomiting
 
 analyses:
-  hg_vs_all:
+  hyperemesis_gravidarum:
       name: Hyperemesis gravidarum
       description: GWAS of mothers hospitalized due to prolonged nausea and vomiting.
       phenotype: hospitalized_prolonged_nausea_vomiting
