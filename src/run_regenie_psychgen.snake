@@ -99,6 +99,8 @@ if not os.path.isdir(lz_folder):
 # Function to generate covariate commands
 def get_covariates(analysis, population):
     analysis_covariates = analyses[analysis]["covariates"]
+    if analysis_covariates is None:
+        analysis_covariates = []
     if population == "children" or population == "children_nausea_vomiting":
         covariates_population = default_covariates_child + analysis_covariates
     elif population == "mothers" or population == "mothers_nausea_vomiting":
