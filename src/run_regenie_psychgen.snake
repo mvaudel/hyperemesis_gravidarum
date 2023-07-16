@@ -23,6 +23,8 @@ pheno_version = config["pheno_version"]
 pheno_release = config["pheno_release"]
 work_folder = os.path.join('/mnt/work/marc/moba', name, suffix)
 
+cojo_threshold = 1e-6
+
 # Phenotypes
 pheno_tables_folder = os.path.join("/mnt/archive/moba/pheno", pheno_version, pheno_release)
 pheno_folder = os.path.join(work_folder, 'pheno', pheno_version, pheno_release)
@@ -344,6 +346,7 @@ rule regenie_to_cojo:
         locus_zoom_folder = os.path.join(results_folder, 'lz'),
         pheno_file = lambda wildcards: get_pheno_file(wildcards.population),
         pheno_column = lambda wildcards: get_pheno_column(wildcards.analysis),
+        cojo_threshold = cojo_threshold
     output:
         output_file = os.path.join(results_folder, '{analysis}', 'cojo', 'tmp', 'step2_pop_{population}_pheno_{analysis}.regenie_toCoJo.done')
     conda:
@@ -351,7 +354,7 @@ rule regenie_to_cojo:
     threads: 4
     shell:
         """
-        Rscript src/cojo/regenie_to_cojo.R {input.regenie_file} {params.cojo_folder} {params.pheno_file} {params.pheno_column} {params.locus_zoom_folder}
+        Rscript src/cojo/regenie_to_cojo.R {input.regenie_file} {params.cojo_folder} {params.pheno_file} {params.pheno_column} {params.locus_zoom_folder} {params.cojo_threshold}
         """
 
 rule cojo:
@@ -365,7 +368,8 @@ rule cojo:
         regenie_file = os.path.join(results_folder, '{analysis}', 'step2_pop_{population}_pheno_{analysis}.regenie.gz'),
         samples_list = lambda wildcards: get_unrelated_sample_id_file(wildcards.population),
         cojo_output_file = os.path.join(results_folder, '{analysis}', 'cojo', 'tmp', 'step2_pop_{population}_pheno_{analysis}.regenie.chr{chr}'),
-        no_snp_file = os.path.join(results_folder, '{analysis}', 'cojo', 'tmp', 'step2_pop_{population}_pheno_{analysis}.regenie.chr{chr}.no_snp')
+        no_snp_file = os.path.join(results_folder, '{analysis}', 'cojo', 'tmp', 'step2_pop_{population}_pheno_{analysis}.regenie.chr{chr}.no_snp'),
+        cojo_threshold = cojo_threshold
     output:
         cojo_done_file = os.path.join(results_folder, '{analysis}', 'cojo', 'tmp', 'step2_pop_{population}_pheno_{analysis}.regenie.chr{chr}.done')
     conda:
@@ -386,7 +390,7 @@ rule cojo:
                 --chr {wildcards.chr} \
                 --extract {params.snp_list_file} \
                 --cojo-slct \
-                --cojo-p 5e-8 \
+                --cojo-p {params.cojo_threshold} \
                 --cojo-wind 500 \
                 --cojo-collinear 0.9 \
                 --diff-freq 0.2 \

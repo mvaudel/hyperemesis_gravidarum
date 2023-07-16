@@ -12,9 +12,9 @@ print(paste0(Sys.time(), " - Formatting regenie results for further analysis"))
 
 args <- commandArgs(TRUE)
 
-if (length(args) != 5) {
+if (length(args) != 6) {
   
-  stop(paste0("Five. ", length(args), " found."))
+  stop(paste0("Six parameters expected. ", length(args), " found."))
   
 }
 
@@ -53,6 +53,16 @@ if (!dir.exists(lz_folder)) {
   stop(paste0("Locus zoom folder ", lz_folder, " not found."))
   
 }
+
+threshold <- args[6]
+
+if (is.na(as.numeric(threshold)))  {
+
+  stop(paste0("Threshold ", threshold, " could not be parsed as a number."))
+
+}
+
+threshold <- as.numeric(threshold)
 
 
 # Read phenotypes
@@ -172,7 +182,7 @@ for (chromosome in unique(regenie_results$CHROM)) {
   
   output_file <- file.path(output_folder, paste0(regenieFileName, ".chr", chromosome, ".no_snp"))
   
-  if (nrow(chr_export) == 0 || min(chr_export$p) > 5e-8) {
+  if (nrow(chr_export) == 0 || min(chr_export$p) > threshold) {
     
     writeLines(
       text = "No GWAS-significant SNP", 

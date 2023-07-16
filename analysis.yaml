@@ -9,11 +9,8 @@ pheno_release: pheno_anthropometrics_23-07-12
 
 populations:
   - children
-  - children_nausea_vomiting
   - mothers
-  - mothers_nausea_vomiting
   - fathers
-  - fathers_nausea_vomiting
 
 analyses:
   hyperemesis_gravidarum:
@@ -21,5 +18,26 @@ analyses:
       description: GWAS of mothers hospitalized due to prolonged nausea and vomiting.
       phenotype: hospitalized_prolonged_nausea_vomiting
       phenotype_name: hospitalized due to prolonged nausea and vomiting
+      phenotype_type: binary
+      covariates:
+  nausea:
+      name: Nausea
+      description: GWAS of mothers reporting nausea at any time point.
+      phenotype: nausea_any
+      phenotype_name: Nausea
+      phenotype_type: binary
+      covariates:
+  vomiting:
+      name: Vomiting
+      description: GWAS of mothers reporting vomiting at any time point.
+      phenotype: vomiting_any
+      phenotype_name: Vomiting
+      phenotype_type: binary
+      covariates:
+  long_term_nausea_vomiting:
+      name: Long-term nausea vomiting
+      description: GWAS of mothers reporting long-term nausea vomiting.
+      phenotype: long_term_nausea_vomiting_any
+      phenotype_name: Long-term nausea vomiting
       phenotype_type: binary
       covariates:
