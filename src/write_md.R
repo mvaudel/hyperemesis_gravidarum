@@ -58,14 +58,26 @@ get_pheno_file <- function(population) {
     
     return(file.path(pheno_folder, "pheno_child"))
     
+  } else if (population == "children_nausea_vomiting") {
+
+    return(file.path(pheno_folder, "pheno_child_nausea_vomiting"))
+
   } else if (population == "mothers") {
     
     return(file.path(pheno_folder, "pheno_mother"))
     
+  } else if (population == "mothers_nausea_vomiting") {
+
+    return(file.path(pheno_folder, "pheno_mother_nausea_vomiting"))
+
   } else if (population == "fathers") {
     
     return(file.path(pheno_folder, "pheno_father"))
     
+  } else if (population == "fathers_nausea_vomiting") {
+
+    return(file.path(pheno_folder, "pheno_father_nausea_vomiting"))
+
   } else {
     
     stop(glue("Link to phenotype file not implemented for population {population}."))
