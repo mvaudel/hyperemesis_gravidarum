@@ -201,9 +201,9 @@ print(f"Starting GWAS pipeline for {name}: {analyses_names}.")
 rule all:
     'The final output rule'
     input:
-        expand(os.path.join(results_folder, '{analysis}', 'step2_{gwas_suffix}.regenie.gz'), gwas_suffix = gwas_suffixes), # The association results
+        expand(os.path.join(results_folder, '{analysis}', 'step2_{gwas_suffix}.regenie.gz'), analysis = analyses_names, gwas_suffix = gwas_suffixes), # The association results
         expand(os.path.join('docs', 'regenie_no_cojo', '{gwas_suffix}', '{gwas_suffix}.md'), gwas_suffix = gwas_suffixes), # Documentation without cojo
-        expand(os.path.join(results_folder, '{analysis}', 'cojo', 'step2_{gwas_suffix}.jma.cojo'), gwas_suffix = gwas_suffixes), # Independent GW significant signals
+        expand(os.path.join(results_folder, '{analysis}', 'cojo', 'step2_{gwas_suffix}.jma.cojo'), analysis = analyses_names, gwas_suffix = gwas_suffixes), # Independent GW significant signals
         expand(os.path.join('docs', 'regenie', '{gwas_suffix}', '{gwas_suffix}.md'), gwas_suffix = gwas_suffixes),  # Documentation with cojo
         expand("README.md"), # The readme file
 
