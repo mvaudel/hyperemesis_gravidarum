@@ -46,6 +46,17 @@ phenotypes <- pregnancy %>%
 
 ```
 
+```{r}
+
+ggplot() +
+  geom_histogram(
+    data = phenotypes,
+    mapping = aes(
+      x = pregnancy_duration
+    )
+  )
+```
+
 ### Number of samples
 
 ```{r}
