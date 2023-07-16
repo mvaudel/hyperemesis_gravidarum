@@ -122,7 +122,10 @@ pheno_table_gwas_child <- fam_table %>%
         IID = child_sentrix_id,
         child_batch,
         nausea_vomiting,
-        hospitalized_prolonged_nausea_vomiting
+        hospitalized_prolonged_nausea_vomiting,
+        nausea_any,
+        vomiting_any,
+        long_term_nausea_vomiting_any
       ),
     by = "IID"
   )
@@ -145,7 +148,10 @@ pheno_table_gwas_mother <- fam_table %>%
         IID = mother_sentrix_id,
         mother_batch,
         nausea_vomiting,
-        hospitalized_prolonged_nausea_vomiting
+        hospitalized_prolonged_nausea_vomiting,
+        nausea_any,
+        vomiting_any,
+        long_term_nausea_vomiting_any
       ),
     by = "IID",
     multiple = "any"
@@ -169,7 +175,10 @@ pheno_table_gwas_father <- fam_table %>%
         IID = father_sentrix_id,
         father_batch,
         nausea_vomiting,
-        hospitalized_prolonged_nausea_vomiting
+        hospitalized_prolonged_nausea_vomiting,
+        nausea_any,
+        vomiting_any,
+        long_term_nausea_vomiting_any
       ),
     by = "IID",
     multiple = "any"
