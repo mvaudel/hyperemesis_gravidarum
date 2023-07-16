@@ -13,7 +13,6 @@ config_file = 'analysis.yaml'
 configfile: config_file
 
 name = config["id"]
-populations = config["populations"]
 analyses = config["analyses"]
 analyses_names = list(analyses.keys())
 
@@ -24,6 +23,12 @@ pheno_release = config["pheno_release"]
 work_folder = os.path.join('/mnt/work/marc/moba', name, suffix)
 
 cojo_threshold = 1e-6
+
+gwas_suffixes = []
+for analysis in analyses_names:
+    for population in analyses[analysis]["populations"]:
+        gwas_suffixes = gwas_suffixes + [f"pop_{population}_pheno_{analysis}"]
+
 
 # Phenotypes
 pheno_tables_folder = os.path.join("/mnt/archive/moba/pheno", pheno_version, pheno_release)
@@ -103,11 +108,11 @@ def get_covariates(analysis, population):
     analysis_covariates = analyses[analysis]["covariates"]
     if analysis_covariates is None:
         analysis_covariates = []
-    if population == "children" or population == "children_nausea_vomiting":
+    if population == "children" or population == "children_no_nausea_vomiting":
         covariates_population = default_covariates_child + analysis_covariates
-    elif population == "mothers" or population == "mothers_nausea_vomiting":
+    elif population == "mothers" or population == "mothers_no_nausea_vomiting":
         covariates_population = default_covariates_mother + analysis_covariates
-    elif population == "fathers" or population == "fathers_nausea_vomiting":
+    elif population == "fathers" or population == "fathers_no_nausea_vomiting":
         covariates_population = default_covariates_father + analysis_covariates
     else:
         raise Exception(f"No covariate found for population: '{population}'.")
@@ -147,37 +152,37 @@ def get_binary_option_step2(analysis):
 def get_pheno_file(population):
     if population == "children":
         return os.path.join(pheno_folder, "pheno_child")
-    elif population == "children_nausea_vomiting":
-        return os.path.join(pheno_folder, "pheno_child_nausea_vomiting")
+    elif population == "children_no_nausea_vomiting":
+        return os.path.join(pheno_folder, "pheno_child_no_nausea_vomiting")
     elif population == "mothers":
         return os.path.join(pheno_folder, "pheno_mother")
-    elif population == "mothers_nausea_vomiting":
-        return os.path.join(pheno_folder, "pheno_mother_nausea_vomiting")
+    elif population == "mothers_no_nausea_vomiting":
+        return os.path.join(pheno_folder, "pheno_mother_no_nausea_vomiting")
     elif population == "fathers":
         return os.path.join(pheno_folder, "pheno_father")
-    elif population == "fathers_nausea_vomiting":
-        return os.path.join(pheno_folder, "pheno_father_nausea_vomiting")
+    elif population == "fathers_no_nausea_vomiting":
+        return os.path.join(pheno_folder, "pheno_father_no_nausea_vomiting")
     else:
         raise Exception(f"No pheno file implemented for population: '{population}'.")
 
 # Function to get the sample id file corresponding to the given population
 def get_sample_id_file(population):
-    if population == "children" or population == "children_nausea_vomiting":
+    if population == "children" or population == "children_no_nausea_vomiting":
         return os.path.join(id_folder, "children_id_plink")
-    elif population == "mothers" or population == "mothers_nausea_vomiting":
+    elif population == "mothers" or population == "mothers_no_nausea_vomiting":
         return os.path.join(id_folder, "mothers_id_plink")
-    elif population == "fathers" or population == "fathers_nausea_vomiting":
+    elif population == "fathers" or population == "fathers_no_nausea_vomiting":
         return os.path.join(id_folder, "fathers_id_plink")
     else:
         raise Exception(f"No id file implemented for population: '{population}'.")
 
 # Function to get an unrelated sample id file corresponding to the given population in the plink format
 def get_unrelated_sample_id_file(population):
-    if population == "children" or population == "children_nausea_vomiting":
+    if population == "children" or population == "children_no_nausea_vomiting":
         return os.path.join(id_folder, "children_id_unrelated_30k_plink")
-    elif population == "mothers" or population == "mothers_nausea_vomiting":
+    elif population == "mothers" or population == "mothers_no_nausea_vomiting":
         return os.path.join(id_folder, "mothers_id_unrelated_30k_plink")
-    elif population == "fathers" or population == "fathers_nausea_vomiting":
+    elif population == "fathers" or population == "fathers_no_nausea_vomiting":
         return os.path.join(id_folder, "fathers_id_unrelated_30k_plink")
     else:
         raise Exception(f"No id file implemented for population: '{population}'.")
@@ -192,14 +197,14 @@ def get_cojo_chr_files(path):
 
 ############################## RULES ###########################################
 
-print(f"Starting GWAS pipeline for {name}: {analyses_names} in {populations}.")
+print(f"Starting GWAS pipeline for {name}: {analyses_names}.")
 rule all:
     'The final output rule'
     input:
-        expand(os.path.join(results_folder,'{analysis}','step2_pop_{population}_pheno_{analysis}.regenie.gz'), analysis = analyses_names, population = populations), # The association results
-        expand(os.path.join('docs','regenie_no_cojo','pop_{population}_pheno_{analysis}','pop_{population}_pheno_{analysis}.md'), analysis = analyses_names, population = populations), # Documentation without cojo
-        expand(os.path.join(results_folder, '{analysis}', 'cojo', 'step2_pop_{population}_pheno_{analysis}.jma.cojo'), analysis = analyses_names, population = populations), # Independent GW significant signals
-        expand(os.path.join('docs','regenie','pop_{population}_pheno_{analysis}','pop_{population}_pheno_{analysis}.md'), analysis = analyses_names, population = populations),  # Documentation with cojo
+        expand(os.path.join(results_folder, '{analysis}', 'step2_{gwas_suffix}.regenie.gz'), gwas_suffix = gwas_suffixes), # The association results
+        expand(os.path.join('docs', 'regenie_no_cojo', '{gwas_suffix}', '{gwas_suffix}.md'), gwas_suffix = gwas_suffixes), # Documentation without cojo
+        expand(os.path.join(results_folder, '{analysis}', 'cojo', 'step2_{gwas_suffix}.jma.cojo'), gwas_suffix = gwas_suffixes), # Independent GW significant signals
+        expand(os.path.join('docs', 'regenie', '{gwas_suffix}', '{gwas_suffix}.md'), gwas_suffix = gwas_suffixes),  # Documentation with cojo
         expand("README.md"), # The readme file
 
 
@@ -213,11 +218,11 @@ rule pheno_file:
         pheno_folder = pheno_folder
     output:
         child_pheno_file = get_pheno_file("children"),
-        child_pheno_file_nausea_vomiting = get_pheno_file("children_nausea_vomiting"),
+        child_pheno_file_no_nausea_vomiting = get_pheno_file("children_no_nausea_vomiting"),
         mother_pheno_file = get_pheno_file("mothers"),
-        mother_pheno_file_nausea_vomiting = get_pheno_file("mothers_nausea_vomiting"),
+        mother_pheno_file_no_nausea_vomiting = get_pheno_file("mothers_no_nausea_vomiting"),
         father_pheno_file = get_pheno_file("fathers"),
-        father_pheno_file_nausea_vomiting = get_pheno_file("fathers_nausea_vomiting"),
+        father_pheno_file_no_nausea_vomiting = get_pheno_file("fathers_no_nausea_vomiting"),
     conda:
         "envs/r_pheno.yaml"
     threads: 1
@@ -449,7 +454,7 @@ rule association_qc:
 rule write_md:
     'Writes md files to link the different results'
     input:
-        md_files = expand(os.path.join('docs','regenie','pop_{population}_pheno_{analysis}','pop_{population}_pheno_{analysis}.md'), analysis = analyses_names, population = populations)
+        md_files = expand(os.path.join('docs', 'regenie', '{gwas_suffix}', '{gwas_suffix}.md'), gwas_suffix = gwas_suffixes)
     params:
         pheno_folder = pheno_folder,
         config_file = config_file

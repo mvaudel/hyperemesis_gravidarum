@@ -58,25 +58,25 @@ get_pheno_file <- function(population) {
     
     return(file.path(pheno_folder, "pheno_child"))
     
-  } else if (population == "children_nausea_vomiting") {
+  } else if (population == "children_no_nausea_vomiting") {
 
-    return(file.path(pheno_folder, "pheno_child_nausea_vomiting"))
+    return(file.path(pheno_folder, "pheno_child_no_nausea_vomiting"))
 
   } else if (population == "mothers") {
     
     return(file.path(pheno_folder, "pheno_mother"))
     
-  } else if (population == "mothers_nausea_vomiting") {
+  } else if (population == "mothers_no_nausea_vomiting") {
 
-    return(file.path(pheno_folder, "pheno_mother_nausea_vomiting"))
+    return(file.path(pheno_folder, "pheno_mother_no_nausea_vomiting"))
 
   } else if (population == "fathers") {
     
     return(file.path(pheno_folder, "pheno_father"))
     
-  } else if (population == "fathers_nausea_vomiting") {
+  } else if (population == "fathers_no_nausea_vomiting") {
 
-    return(file.path(pheno_folder, "pheno_father_nausea_vomiting"))
+    return(file.path(pheno_folder, "pheno_father_no_nausea_vomiting"))
 
   } else {
     
@@ -153,7 +153,7 @@ for (analysis_id in names(config$analyses)) {
   
   # Get phenotype summary statistics
   
-  for (population in config$populations) {
+  for (population in analysis$populations) {
     
     write(
       x = glue("### {population}\n\n"),

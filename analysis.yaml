@@ -7,11 +7,6 @@ suffix: 23-07-15
 pheno_version: v12
 pheno_release: pheno_anthropometrics_23-07-12
 
-populations:
-  - children
-  - mothers
-  - fathers
-
 analyses:
   hyperemesis_gravidarum:
       name: Hyperemesis gravidarum
@@ -20,24 +15,47 @@ analyses:
       phenotype_name: hospitalized due to prolonged nausea and vomiting
       phenotype_type: binary
       covariates:
-  nausea:
-      name: Nausea
-      description: GWAS of mothers reporting nausea at any time point.
-      phenotype: nausea_any
-      phenotype_name: Nausea
-      phenotype_type: binary
-      covariates:
-  vomiting:
-      name: Vomiting
-      description: GWAS of mothers reporting vomiting at any time point.
-      phenotype: vomiting_any
-      phenotype_name: Vomiting
-      phenotype_type: binary
-      covariates:
-  long_term_nausea_vomiting:
-      name: Long-term nausea vomiting
-      description: GWAS of mothers reporting long-term nausea vomiting.
-      phenotype: long_term_nausea_vomiting_any
-      phenotype_name: Long-term nausea vomiting
-      phenotype_type: binary
-      covariates:
+      populations:
+        - children
+        - children_no_nausea_vomiting
+        - mothers
+        - mothers_no_nausea_vomiting
+        - fathers
+        - fathers_no_nausea_vomiting
+#
+#  nausea:
+#      name: Nausea
+#      description: GWAS of mothers reporting nausea at any time point.
+#      phenotype: nausea_any
+#      phenotype_name: Nausea
+#      phenotype_type: binary
+#      covariates:
+#      populations:
+#        - children
+#        - mothers
+#        - fathers
+#
+#  vomiting:
+#      name: Vomiting
+#      description: GWAS of mothers reporting vomiting at any time point.
+#      phenotype: vomiting_any
+#      phenotype_name: Vomiting
+#      phenotype_type: binary
+#      covariates:
+#      populations:
+#        - children
+#        - mothers
+#        - fathers
+#
+#  long_term_nausea_vomiting:
+#      name: Long-term nausea vomiting
+#      description: GWAS of mothers reporting long-term nausea vomiting.
+#      phenotype: long_term_nausea_vomiting_any
+#      phenotype_name: Long-term nausea vomiting
+#      phenotype_type: binary
+#      covariates:
+#      populations:
+#        - children
+#        - mothers
+#        - fathers
+

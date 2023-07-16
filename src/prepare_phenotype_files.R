@@ -188,8 +188,6 @@ for (batch_name in unique(pheno_table_gwas_father$father_batch)) {
   
   batch_column <- make_clean_names(paste0("batch_", tolower(batch_name)))
   
-  batch_column <- 
-  
   pheno_table_gwas_father[[batch_column]] <- ifelse(pheno_table_gwas_father$father_batch == batch_column, 1, 0)
   
 }
@@ -209,12 +207,12 @@ write.table(
 
 pheno_table_gwas_child_nausea_vomiting <- pheno_table_gwas_child %>% 
   filter(
-    nausea_vomiting == 1
+    nausea_vomiting == 1 | hospitalized_prolonged_nausea_vomiting == 1
   )
 
 write.table(
   x = pheno_table_gwas_child_nausea_vomiting,
-  file = file.path(gwas_pheno_folder, "pheno_child_nausea_vomiting"),
+  file = file.path(gwas_pheno_folder, "pheno_child_no_nausea_vomiting"),
   row.names = F, 
   col.names = T, 
   quote = F
@@ -230,12 +228,12 @@ write.table(
 
 pheno_table_gwas_mother_nausea_vomiting <- pheno_table_gwas_mother %>% 
   filter(
-    nausea_vomiting == 1
+    nausea_vomiting == 1 | hospitalized_prolonged_nausea_vomiting == 1
   )
 
 write.table(
   x = pheno_table_gwas_mother_nausea_vomiting,
-  file = file.path(gwas_pheno_folder, "pheno_mother_nausea_vomiting"),
+  file = file.path(gwas_pheno_folder, "pheno_mother_no_nausea_vomiting"),
   row.names = F, 
   col.names = T, 
   quote = F
@@ -251,12 +249,12 @@ write.table(
 
 pheno_table_gwas_father_nausea_vomiting <- pheno_table_gwas_father %>% 
   filter(
-    nausea_vomiting == 1
+    nausea_vomiting == 0 | hospitalized_prolonged_nausea_vomiting == 1
   )
 
 write.table(
   x = pheno_table_gwas_father_nausea_vomiting,
-  file = file.path(gwas_pheno_folder, "pheno_father_nausea_vomiting"),
+  file = file.path(gwas_pheno_folder, "pheno_father_no_nausea_vomiting"),
   row.names = F, 
   col.names = T, 
   quote = F
