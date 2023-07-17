@@ -15,19 +15,19 @@ GWAS of mothers hospitalized due to prolonged nausea and vomiting.
 ![](regenie/pop_children_pheno_hyperemesis_gravidarum/figures/pop_children_pheno_hyperemesis_gravidarum_mh.png)
 Results prior to COJO are available [here](regenie_no_cojo/pop_children_pheno_hyperemesis_gravidarum/pop_children_pheno_hyperemesis_gravidarum.md)
 
-### children_nausea_vomiting
+### children_no_nausea_vomiting
 
 #### Phenotypes
 | Value | N |
 | ----- | - |
 | 0 | 54051 |
-| 1 | 739 |
-| Total | 54790 |
+| 1 | 748 |
+| Total | 54799 |
 
 #### Association results
-- [Association results](regenie/pop_children_nausea_vomiting_pheno_hyperemesis_gravidarum/pop_children_nausea_vomiting_pheno_hyperemesis_gravidarum.md)
-![](regenie/pop_children_nausea_vomiting_pheno_hyperemesis_gravidarum/figures/pop_children_nausea_vomiting_pheno_hyperemesis_gravidarum_mh.png)
-Results prior to COJO are available [here](regenie_no_cojo/pop_children_nausea_vomiting_pheno_hyperemesis_gravidarum/pop_children_nausea_vomiting_pheno_hyperemesis_gravidarum.md)
+- [Association results](regenie/pop_children_no_nausea_vomiting_pheno_hyperemesis_gravidarum/pop_children_no_nausea_vomiting_pheno_hyperemesis_gravidarum.md)
+![](regenie/pop_children_no_nausea_vomiting_pheno_hyperemesis_gravidarum/figures/pop_children_no_nausea_vomiting_pheno_hyperemesis_gravidarum_mh.png)
+Results prior to COJO are available [here](regenie_no_cojo/pop_children_no_nausea_vomiting_pheno_hyperemesis_gravidarum/pop_children_no_nausea_vomiting_pheno_hyperemesis_gravidarum.md)
 
 ### mothers
 
@@ -43,19 +43,19 @@ Results prior to COJO are available [here](regenie_no_cojo/pop_children_nausea_v
 ![](regenie/pop_mothers_pheno_hyperemesis_gravidarum/figures/pop_mothers_pheno_hyperemesis_gravidarum_mh.png)
 Results prior to COJO are available [here](regenie_no_cojo/pop_mothers_pheno_hyperemesis_gravidarum/pop_mothers_pheno_hyperemesis_gravidarum.md)
 
-### mothers_nausea_vomiting
+### mothers_no_nausea_vomiting
 
 #### Phenotypes
 | Value | N |
 | ----- | - |
 | 0 | 41287 |
-| 1 | 571 |
-| Total | 41858 |
+| 1 | 577 |
+| Total | 41864 |
 
 #### Association results
-- [Association results](regenie/pop_mothers_nausea_vomiting_pheno_hyperemesis_gravidarum/pop_mothers_nausea_vomiting_pheno_hyperemesis_gravidarum.md)
-![](regenie/pop_mothers_nausea_vomiting_pheno_hyperemesis_gravidarum/figures/pop_mothers_nausea_vomiting_pheno_hyperemesis_gravidarum_mh.png)
-Results prior to COJO are available [here](regenie_no_cojo/pop_mothers_nausea_vomiting_pheno_hyperemesis_gravidarum/pop_mothers_nausea_vomiting_pheno_hyperemesis_gravidarum.md)
+- [Association results](regenie/pop_mothers_no_nausea_vomiting_pheno_hyperemesis_gravidarum/pop_mothers_no_nausea_vomiting_pheno_hyperemesis_gravidarum.md)
+![](regenie/pop_mothers_no_nausea_vomiting_pheno_hyperemesis_gravidarum/figures/pop_mothers_no_nausea_vomiting_pheno_hyperemesis_gravidarum_mh.png)
+Results prior to COJO are available [here](regenie_no_cojo/pop_mothers_no_nausea_vomiting_pheno_hyperemesis_gravidarum/pop_mothers_no_nausea_vomiting_pheno_hyperemesis_gravidarum.md)
 
 ### fathers
 
@@ -71,17 +71,17 @@ Results prior to COJO are available [here](regenie_no_cojo/pop_mothers_nausea_vo
 ![](regenie/pop_fathers_pheno_hyperemesis_gravidarum/figures/pop_fathers_pheno_hyperemesis_gravidarum_mh.png)
 Results prior to COJO are available [here](regenie_no_cojo/pop_fathers_pheno_hyperemesis_gravidarum/pop_fathers_pheno_hyperemesis_gravidarum.md)
 
-### fathers_nausea_vomiting
+### fathers_no_nausea_vomiting
 
 #### Phenotypes
 | Value | N |
 | ----- | - |
-| 0 | 28561 |
-| 1 | 426 |
-| Total | 28987 |
+| 0 | 9461 |
+| 1 | 430 |
+| Total | 9891 |
 
 #### Association results
-- [Association results](regenie/pop_fathers_nausea_vomiting_pheno_hyperemesis_gravidarum/pop_fathers_nausea_vomiting_pheno_hyperemesis_gravidarum.md)
-![](regenie/pop_fathers_nausea_vomiting_pheno_hyperemesis_gravidarum/figures/pop_fathers_nausea_vomiting_pheno_hyperemesis_gravidarum_mh.png)
-Results prior to COJO are available [here](regenie_no_cojo/pop_fathers_nausea_vomiting_pheno_hyperemesis_gravidarum/pop_fathers_nausea_vomiting_pheno_hyperemesis_gravidarum.md)
+- [Association results](regenie/pop_fathers_no_nausea_vomiting_pheno_hyperemesis_gravidarum/pop_fathers_no_nausea_vomiting_pheno_hyperemesis_gravidarum.md)
+![](regenie/pop_fathers_no_nausea_vomiting_pheno_hyperemesis_gravidarum/figures/pop_fathers_no_nausea_vomiting_pheno_hyperemesis_gravidarum_mh.png)
+Results prior to COJO are available [here](regenie_no_cojo/pop_fathers_no_nausea_vomiting_pheno_hyperemesis_gravidarum/pop_fathers_no_nausea_vomiting_pheno_hyperemesis_gravidarum.md)
 
