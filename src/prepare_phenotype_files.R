@@ -197,17 +197,17 @@ for (batch_name in unique(pheno_table_gwas_father$father_batch)) {
 
 print(paste0(Sys.time(), " - Export of tables"))
 
-write.table(
-  x = pheno_table_gwas_child,
-  file = file.path(gwas_pheno_folder, "pheno_child"),
-  row.names = F, 
-  col.names = T, 
-  quote = F
-)
+# write.table(
+#   x = pheno_table_gwas_child,
+#   file = file.path(gwas_pheno_folder, "pheno_child"),
+#   row.names = F,
+#   col.names = T,
+#   quote = F
+# )
 
 pheno_table_gwas_child_nausea_vomiting <- pheno_table_gwas_child %>% 
   filter(
-    nausea_vomiting == 1 | hospitalized_prolonged_nausea_vomiting == 1
+    nausea_vomiting == 0 | hospitalized_prolonged_nausea_vomiting == 1
   )
 
 write.table(
@@ -217,18 +217,18 @@ write.table(
   col.names = T, 
   quote = F
 )
-
-write.table(
-  x = pheno_table_gwas_mother,
-  file = file.path(gwas_pheno_folder, "pheno_mother"),
-  row.names = F, 
-  col.names = T, 
-  quote = F
-)
+#
+# write.table(
+#   x = pheno_table_gwas_mother,
+#   file = file.path(gwas_pheno_folder, "pheno_mother"),
+#   row.names = F,
+#   col.names = T,
+#   quote = F
+# )
 
 pheno_table_gwas_mother_nausea_vomiting <- pheno_table_gwas_mother %>% 
   filter(
-    nausea_vomiting == 1 | hospitalized_prolonged_nausea_vomiting == 1
+    nausea_vomiting == 0 | hospitalized_prolonged_nausea_vomiting == 1
   )
 
 write.table(
@@ -239,26 +239,26 @@ write.table(
   quote = F
 )
 
-write.table(
-  x = pheno_table_gwas_father,
-  file = file.path(gwas_pheno_folder, "pheno_father"),
-  row.names = F, 
-  col.names = T, 
-  quote = F
-)
-
-pheno_table_gwas_father_nausea_vomiting <- pheno_table_gwas_father %>% 
-  filter(
-    nausea_vomiting == 0 | hospitalized_prolonged_nausea_vomiting == 1
-  )
-
-write.table(
-  x = pheno_table_gwas_father_nausea_vomiting,
-  file = file.path(gwas_pheno_folder, "pheno_father_no_nausea_vomiting"),
-  row.names = F, 
-  col.names = T, 
-  quote = F
-)
+# write.table(
+#   x = pheno_table_gwas_father,
+#   file = file.path(gwas_pheno_folder, "pheno_father"),
+#   row.names = F,
+#   col.names = T,
+#   quote = F
+# )
+#
+# pheno_table_gwas_father_nausea_vomiting <- pheno_table_gwas_father %>%
+#   filter(
+#     nausea_vomiting == 0 | hospitalized_prolonged_nausea_vomiting == 1
+#   )
+#
+# write.table(
+#   x = pheno_table_gwas_father_nausea_vomiting,
+#   file = file.path(gwas_pheno_folder, "pheno_father_no_nausea_vomiting"),
+#   row.names = F,
+#   col.names = T,
+#   quote = F
+# )
 
 
 
