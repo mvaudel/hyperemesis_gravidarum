@@ -3,7 +3,7 @@
 id: hyperemesis_gravidarum
 name: Hyperemesis Gravidarum
 description: Genetic analyses of hyperemesis gravidarum in the [Norwegian Mother, Father and Child Cohort Study (MoBa)](https://www.fhi.no/en/ch/studies/moba).
-suffix: 23-07-15
+suffix: 23-07-18
 pheno_version: v12
 pheno_release: pheno_anthropometrics_23-07-12
 
@@ -16,6 +16,9 @@ analyses:
       phenotype_type: binary
       covariates:
       populations:
+        - children
+        - mothers
+        - fathers
         - children_no_nausea_vomiting
         - mothers_no_nausea_vomiting
         - fathers_no_nausea_vomiting
