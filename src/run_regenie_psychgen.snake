@@ -22,7 +22,7 @@ pheno_version = config["pheno_version"]
 pheno_release = config["pheno_release"]
 work_folder = os.path.join('/mnt/work/marc/moba', name, suffix)
 
-cojo_threshold = 1e-6
+cojo_threshold = 1e-8
 
 gwas_suffixes = []
 for analysis in analyses_names:

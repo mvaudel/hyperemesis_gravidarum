@@ -16,11 +16,8 @@ analyses:
       phenotype_type: binary
       covariates:
       populations:
-        - children
         - children_no_nausea_vomiting
-        - mothers
         - mothers_no_nausea_vomiting
-        - fathers
         - fathers_no_nausea_vomiting
 #
 #  nausea:
