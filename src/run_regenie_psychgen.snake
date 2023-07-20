@@ -426,6 +426,8 @@ rule association_qc_no_cojo:
     'Writes documentation on the association results'
     input:
         regenie_file = os.path.join(results_folder, '{analysis}', 'step2_pop_{population}_pheno_{analysis}.regenie.gz')
+    params:
+        docs_folder = docs_folder
     output:
         output_file = os.path.join(docs_folder, 'regenie_no_cojo', 'pop_{population}_pheno_{analysis}', 'pop_{population}_pheno_{analysis}.md')
     conda:
@@ -433,7 +435,7 @@ rule association_qc_no_cojo:
     threads: 1
     shell:
         """
-        Rscript src/association_qc_no_cojo.R {input.regenie_file}
+        Rscript src/association_qc_no_cojo.R {input.regenie_file} {params.docs_folder}
         """
 
 rule association_qc:
@@ -441,6 +443,8 @@ rule association_qc:
     input:
         regenie_file = os.path.join(results_folder, '{analysis}', 'step2_pop_{population}_pheno_{analysis}.regenie.gz'),
         cojo_file = os.path.join(results_folder, '{analysis}', 'cojo', 'step2_pop_{population}_pheno_{analysis}.jma.cojo')
+    params:
+        docs_folder = docs_folder
     output:
         output_file = os.path.join(docs_folder, 'regenie', 'pop_{population}_pheno_{analysis}', 'pop_{population}_pheno_{analysis}.md')
     conda:
@@ -448,7 +452,7 @@ rule association_qc:
     threads: 1
     shell:
         """
-        Rscript src/association_qc.R {input.regenie_file} {input.cojo_file}
+        Rscript src/association_qc.R {input.regenie_file} {input.cojo_file} {params.docs_folder}
         """
 
 rule write_md:

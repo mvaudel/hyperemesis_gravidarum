@@ -499,6 +499,7 @@ if (length(args) != 2) {
 
 regenie_output_path <- args[1]
 cojo_output_path <- args[2]
+release_folder <- args[3]
 
 # Parameters
 
@@ -552,7 +553,7 @@ split <- strsplit(substr(x = md_base, start = 5, stop = 1e9), "_pheno_")[[1]]
 population <- split[1]
 pheno <- split[2]
 
-doc_folder <- file.path("docs/regenie", md_base)
+doc_folder <- file.path(release_folder, "regenie", md_base)
 md_file <- file.path(doc_folder, paste0(md_base, ".md"))
 figures_folder <- file.path(doc_folder, "figures")
 phenoscanner_folder <- file.path(doc_folder, "phenoscanner")
