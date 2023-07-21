@@ -45,15 +45,7 @@ if (!dir.exists(pheno_folder)) {
   
 }
 
-release_folder <- args[3]
-
-if (!dir.exists(release_folder)) {
-
-  stop(glue("Release documentation folder {release_folder} not found."))
-
-}
-
-release_folder_relative <- args[4]
+release_folder_relative <- args[3]
 
 # Import config file
 

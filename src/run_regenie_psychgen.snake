@@ -202,9 +202,9 @@ rule all:
     'The final output rule'
     input:
         expand(os.path.join(results_folder, '{analysis}', 'step2_{gwas_suffix}.regenie.gz'), analysis = analyses_names, gwas_suffix = gwas_suffixes), # The association results
-        expand(os.path.join('docs', 'regenie_no_cojo', '{gwas_suffix}', '{gwas_suffix}.md'), gwas_suffix = gwas_suffixes), # Documentation without cojo
+        expand(os.path.join(docs_folder, 'regenie_no_cojo', '{gwas_suffix}', '{gwas_suffix}.md'), gwas_suffix = gwas_suffixes), # Documentation without cojo
         expand(os.path.join(results_folder, '{analysis}', 'cojo', 'step2_{gwas_suffix}.jma.cojo'), analysis = analyses_names, gwas_suffix = gwas_suffixes), # Independent GW significant signals
-        expand(os.path.join('docs', 'regenie', '{gwas_suffix}', '{gwas_suffix}.md'), gwas_suffix = gwas_suffixes),  # Documentation with cojo
+        expand(os.path.join(docs_folder, 'regenie', '{gwas_suffix}', '{gwas_suffix}.md'), gwas_suffix = gwas_suffixes),  # Documentation with cojo
         expand("README.md"), # The readme file
 
 
@@ -461,7 +461,8 @@ rule write_md:
         md_files = expand(os.path.join(docs_folder, 'regenie', '{gwas_suffix}', '{gwas_suffix}.md'), gwas_suffix = gwas_suffixes)
     params:
         pheno_folder = pheno_folder,
-        config_file = config_file
+        config_file = config_file,
+        docs_folder = docs_folder
     output:
         output_file = 'README.md'
     conda:
@@ -469,7 +470,7 @@ rule write_md:
     threads: 1
     shell:
         """
-        Rscript src/write_md.R {params.config_file} {params.pheno_folder}
+        Rscript src/write_md.R {params.config_file} {params.pheno_folder} {params.docs_folder}
         """
 
 
