@@ -45,7 +45,7 @@ if (!dir.exists(pheno_folder)) {
   
 }
 
-release_folder_relative <- args[3]
+release_folder <- args[3]
 
 # Import config file
 
@@ -116,7 +116,7 @@ for (analysis_id in names(config$analyses)) {
   
   analysis <- config$analyses[[analysis_id]]
   
-  relative_path <- glue("{release_folder_relative}/{analysis_id}.md")
+  relative_path <- glue("{release_folder}/{analysis_id}.md")
   analysis_md <- file.path(here(), relative_path)
   
   write(
