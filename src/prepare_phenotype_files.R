@@ -81,7 +81,7 @@ pregnancy_table <- pregnancy_table %>%
 
 # Format variables of interest
 
-print(paste0(Sys.time(), " - Handling of outliers"))
+print(paste0(Sys.time(), " - Hadnling of outliers and combination of variables"))
 
 pheno_table <- pregnancy_table %>% 
   mutate(
@@ -91,7 +91,28 @@ pheno_table <- pregnancy_table %>%
     nausea_any = ifelse(nausea_q2 == 1 | !is.na(nausea_before_4w) | !is.na(nausea_5w_8w) | !is.na(nausea_9w_12w) | !is.na(nausea_13w_15w) | !is.na(nausea_13w_16w) | !is.na(nausea_17w_20w) | !is.na(nausea_21w_24w) | !is.na(nausea_25w_28w) | !is.na(nausea_after_29w), 1, 0),
     vomiting_any = ifelse(vomiting_q2 == 1 | !is.na(vomiting_before_4w) | !is.na(vomiting_5w_8w) | !is.na(vomiting_9w_12w) | !is.na(vomiting_13w_15w), 1, 0),
     long_term_nausea_vomiting_any = ifelse(!is.na(long_term_nausea_vomiting_13w_16w) | !is.na(long_term_nausea_vomiting_17w_20w) | !is.na(long_term_nausea_vomiting_21w_24w) | !is.na(long_term_nausea_vomiting_25w_28w) | !is.na(long_term_nausea_vomiting_after_29w), 1, 0),
-    nausea_vomiting = ifelse(nausea_any == 0 & vomiting_any == 0 & long_term_nausea_vomiting_any == 0, 0, 1)
+    nausea_vomiting = ifelse(nausea_any == 0 & vomiting_any == 0 & long_term_nausea_vomiting_any == 0, 0, 1),
+    nausea_duration = ifelse(is.na(nausea_week_most_bothered_from_q2) | is.na(nausea_week_most_bothered_to_q2), NA, nausea_week_most_bothered_to_q2 - nausea_week_most_bothered_from_q2),
+    vomiting_duration = ifelse(is.na(vomiting_week_from_q2) | is.na(vomiting_week_to_q2), NA, vomiting_week_to_q2 - vomiting_week_from_q2),
+    nausea_week_most_bothered_from_q2 = ifelse(!is.na(nausea_duration) & nausea_duration < 0, NA, nausea_week_most_bothered_from_q2),
+    nausea_week_most_bothered_to_q2 = ifelse(!is.na(nausea_duration) & nausea_duration < 0, NA, nausea_week_most_bothered_to_q2),
+    nausea_duration = ifelse(!is.na(nausea_duration) & nausea_duration < 0, NA, nausea_duration),
+    vomiting_week_from_q2 = ifelse(!is.na(vomiting_duration) & vomiting_duration < 0, NA, vomiting_week_from_q2),
+    vomiting_week_to_q2 = ifelse(!is.na(vomiting_duration) & vomiting_duration < 0, NA, vomiting_week_to_q2),
+    vomiting_duration = ifelse(!is.na(vomiting_duration) & vomiting_duration < 0, NA, vomiting_duration)
+  ) %>% 
+  mutate(
+    hg_vs_all = ifelse(hospitalized_prolonged_nausea_vomiting == 1, 1, 0),
+    hg_vs_no_nausea_vomiting = ifelse(hospitalized_prolonged_nausea_vomiting == 1, 1, NA),
+    vomiting_before_4w = ifelse(!is.na(vomiting_before_4w), 1, 0),
+    vomiting_5w_8w = ifelse(!is.na(vomiting_before_4w), 1, 0),
+    vomiting_9w_12w = ifelse(!is.na(vomiting_9w_12w), 1, 0),
+    vomiting_13w_15w = ifelse(!is.na(vomiting_13w_15w), 1, 0),
+    long_term_nausea_vomiting_13w_16w = ifelse(!is.na(long_term_nausea_vomiting_13w_16w), 1, 0),
+    long_term_nausea_vomiting_17w_20w = ifelse(!is.na(long_term_nausea_vomiting_17w_20w), 1, 0),
+    long_term_nausea_vomiting_21w_24w = ifelse(!is.na(long_term_nausea_vomiting_21w_24w), 1, 0),
+    long_term_nausea_vomiting_25w_28w = ifelse(!is.na(long_term_nausea_vomiting_25w_28w), 1, 0),
+    long_term_nausea_vomiting_after_29w = ifelse(!is.na(long_term_nausea_vomiting_after_29w), 1, 0)
   )
 
 
@@ -121,11 +142,20 @@ pheno_table_gwas_child <- fam_table %>%
       select(
         IID = child_sentrix_id,
         child_batch,
-        nausea_vomiting,
-        hospitalized_prolonged_nausea_vomiting,
-        nausea_any,
-        vomiting_any,
-        long_term_nausea_vomiting_any
+        hg_vs_all,
+        hg_vs_no_nausea_vomiting,
+        vomiting_before_4w,
+        vomiting_5w_8w,
+        vomiting_9w_12w,
+        vomiting_13w_15w,
+        long_term_nausea_vomiting_13w_16w,
+        long_term_nausea_vomiting_17w_20w,
+        long_term_nausea_vomiting_21w_24w,
+        long_term_nausea_vomiting_25w_28w,
+        long_term_nausea_vomiting_after_29w,
+        vomiting_week_from_q2,
+        vomiting_week_to_q2,
+        vomiting_duration
       ),
     by = "IID"
   )
@@ -147,11 +177,20 @@ pheno_table_gwas_mother <- fam_table %>%
       select(
         IID = mother_sentrix_id,
         mother_batch,
-        nausea_vomiting,
-        hospitalized_prolonged_nausea_vomiting,
-        nausea_any,
-        vomiting_any,
-        long_term_nausea_vomiting_any
+        hg_vs_all,
+        hg_vs_no_nausea_vomiting,
+        vomiting_before_4w,
+        vomiting_5w_8w,
+        vomiting_9w_12w,
+        vomiting_13w_15w,
+        long_term_nausea_vomiting_13w_16w,
+        long_term_nausea_vomiting_17w_20w,
+        long_term_nausea_vomiting_21w_24w,
+        long_term_nausea_vomiting_25w_28w,
+        long_term_nausea_vomiting_after_29w,
+        vomiting_week_from_q2,
+        vomiting_week_to_q2,
+        vomiting_duration
       ),
     by = "IID",
     multiple = "any"
@@ -174,11 +213,20 @@ pheno_table_gwas_father <- fam_table %>%
       select(
         IID = father_sentrix_id,
         father_batch,
-        nausea_vomiting,
-        hospitalized_prolonged_nausea_vomiting,
-        nausea_any,
-        vomiting_any,
-        long_term_nausea_vomiting_any
+        hg_vs_all,
+        hg_vs_no_nausea_vomiting,
+        vomiting_before_4w,
+        vomiting_5w_8w,
+        vomiting_9w_12w,
+        vomiting_13w_15w,
+        long_term_nausea_vomiting_13w_16w,
+        long_term_nausea_vomiting_17w_20w,
+        long_term_nausea_vomiting_21w_24w,
+        long_term_nausea_vomiting_25w_28w,
+        long_term_nausea_vomiting_after_29w,
+        vomiting_week_from_q2,
+        vomiting_week_to_q2,
+        vomiting_duration
       ),
     by = "IID",
     multiple = "any"
@@ -205,19 +253,6 @@ write.table(
   quote = F
 )
 
-pheno_table_gwas_child_nausea_vomiting <- pheno_table_gwas_child %>% 
-  filter(
-    nausea_vomiting == 0 | hospitalized_prolonged_nausea_vomiting == 1
-  )
-
-write.table(
-  x = pheno_table_gwas_child_nausea_vomiting,
-  file = file.path(gwas_pheno_folder, "pheno_child_no_nausea_vomiting"),
-  row.names = F, 
-  col.names = T, 
-  quote = F
-)
-
 write.table(
   x = pheno_table_gwas_mother,
   file = file.path(gwas_pheno_folder, "pheno_mother"),
@@ -226,35 +261,9 @@ write.table(
   quote = F
 )
 
-pheno_table_gwas_mother_nausea_vomiting <- pheno_table_gwas_mother %>% 
-  filter(
-    nausea_vomiting == 0 | hospitalized_prolonged_nausea_vomiting == 1
-  )
-
-write.table(
-  x = pheno_table_gwas_mother_nausea_vomiting,
-  file = file.path(gwas_pheno_folder, "pheno_mother_no_nausea_vomiting"),
-  row.names = F, 
-  col.names = T, 
-  quote = F
-)
-
 write.table(
   x = pheno_table_gwas_father,
   file = file.path(gwas_pheno_folder, "pheno_father"),
-  row.names = F,
-  col.names = T,
-  quote = F
-)
-
-pheno_table_gwas_father_nausea_vomiting <- pheno_table_gwas_father %>%
-  filter(
-    nausea_vomiting == 0 | hospitalized_prolonged_nausea_vomiting == 1
-  )
-
-write.table(
-  x = pheno_table_gwas_father_nausea_vomiting,
-  file = file.path(gwas_pheno_folder, "pheno_father_no_nausea_vomiting"),
   row.names = F,
   col.names = T,
   quote = F

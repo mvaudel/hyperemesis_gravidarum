@@ -59,26 +59,14 @@ get_pheno_file <- function(population) {
   if (population == "children") {
     
     return(file.path(pheno_folder, "pheno_child"))
-    
-  } else if (population == "children_no_nausea_vomiting") {
-
-    return(file.path(pheno_folder, "pheno_child_no_nausea_vomiting"))
 
   } else if (population == "mothers") {
     
     return(file.path(pheno_folder, "pheno_mother"))
-    
-  } else if (population == "mothers_no_nausea_vomiting") {
-
-    return(file.path(pheno_folder, "pheno_mother_no_nausea_vomiting"))
 
   } else if (population == "fathers") {
     
     return(file.path(pheno_folder, "pheno_father"))
-    
-  } else if (population == "fathers_no_nausea_vomiting") {
-
-    return(file.path(pheno_folder, "pheno_father_no_nausea_vomiting"))
 
   } else {
     
