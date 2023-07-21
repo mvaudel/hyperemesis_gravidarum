@@ -45,6 +45,16 @@ if (!dir.exists(pheno_folder)) {
   
 }
 
+release_folder <- args[3]
+
+if (!dir.exists(release_folder)) {
+
+  stop(glue("Release documentation folder {release_folder} not found."))
+
+}
+
+release_folder_relative <- args[4]
+
 # Import config file
 
 config <- read_yaml(parameters_file)
@@ -86,16 +96,6 @@ get_pheno_file <- function(population) {
   
 }
 
-# Housekeeping
-
-plots_folder <- file.path(here(), "docs", "plots")
-
-if (!dir.exists(plots_folder)) {
-  
-  dir.create(plots_folder)
-  
-}
-
 
 # Write readme
 
@@ -124,7 +124,7 @@ for (analysis_id in names(config$analyses)) {
   
   analysis <- config$analyses[[analysis_id]]
   
-  relative_path <- glue("docs/{analysis_id}.md")
+  relative_path <- glue("{release_folder_relative}/{analysis_id}.md")
   analysis_md <- file.path(here(), relative_path)
   
   write(
@@ -150,6 +150,16 @@ for (analysis_id in names(config$analyses)) {
     file = analysis_md,
     append = T
   )
+
+  # Housekeeping
+
+plots_folder <- file.path(here(), release_folder, glue("{analysis_id}_plots"))
+
+if (!dir.exists(plots_folder)) {
+
+  dir.create(plots_folder)
+
+}
   
   # Get phenotype summary statistics
   
@@ -264,7 +274,7 @@ for (analysis_id in names(config$analyses)) {
           device <- dev.off()
           
           write(
-            x = glue("![](plots/{population}_{covariate}.png)"),
+            x = glue("![]({analysis_id}_plots/{population}_{covariate}.png)"),
             file = analysis_md,
             append = T
           )
@@ -352,7 +362,7 @@ for (analysis_id in names(config$analyses)) {
           device <- dev.off()
           
           write(
-            x = glue("![](plots/{population}_{covariate}.png)"),
+            x = glue("![]({analysis_id}_plots/{population}_{covariate}.png)"),
             file = analysis_md,
             append = T
           )
@@ -481,7 +491,7 @@ for (analysis_id in names(config$analyses)) {
           device <- dev.off()
           
           write(
-            x = glue("![](plots/{population}_{covariate}.png)"),
+            x = glue("![]({analysis_id}_plots/{population}_{covariate}.png)"),
             file = analysis_md,
             append = T
           )
@@ -557,7 +567,7 @@ for (analysis_id in names(config$analyses)) {
           device <- dev.off()
           
           write(
-            x = glue("![](plots/{population}_{covariate}.png)"),
+            x = glue("![]({analysis_id}_plots/{population}_{covariate}.png)"),
             file = analysis_md,
             append = T
           )
@@ -571,6 +581,12 @@ for (analysis_id in names(config$analyses)) {
       file = analysis_md,
       append = T
     )
+
+    write(
+      x = glue("![](regenie/pop_{population}_pheno_{analysis_id}/figures/pop_{population}_pheno_{analysis_id}_mh.png)\n"),
+      file = analysis_md,
+      append = T
+    )
     
     write(
       x = glue("- [Association results](regenie/pop_{population}_pheno_{analysis_id}/pop_{population}_pheno_{analysis_id}.md)\n"),
@@ -579,13 +595,7 @@ for (analysis_id in names(config$analyses)) {
     )
     
     write(
-      x = glue("![](regenie/pop_{population}_pheno_{analysis_id}/figures/pop_{population}_pheno_{analysis_id}_mh.png)\n"),
-      file = analysis_md,
-      append = T
-    )
-    
-    write(
-      x = glue("Results prior to COJO are available [here](regenie_no_cojo/pop_{population}_pheno_{analysis_id}/pop_{population}_pheno_{analysis_id}.md)\n\n"),
+      x = glue("- [Results prior to COJO](regenie_no_cojo/pop_{population}_pheno_{analysis_id}/pop_{population}_pheno_{analysis_id}.md)\n\n"),
       file = analysis_md,
       append = T
     )
