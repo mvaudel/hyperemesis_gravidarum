@@ -1,7 +1,7 @@
 # Hyperemesis Gravidarum
 Genetic analyses of hyperemesis gravidarum in the [Norwegian Mother, Father and Child Cohort Study (MoBa)](https://www.fhi.no/en/ch/studies/moba).
 ### Analyses
-- [Hyperemesis gravidarum](docs/hyperemesis_gravidarum.md): GWAS of mothers hospitalized due to prolonged nausea and vomiting.
+- [Hyperemesis gravidarum](docs/23-07-18/hyperemesis_gravidarum.md): GWAS of mothers hospitalized due to prolonged nausea and vomiting.
 
 ### Errors, questions, and bug report
 
