@@ -596,7 +596,7 @@ if (!dir.exists(plots_folder)) {
 }
 
 write(
-  x = "### Errors, questions, and bug report\n",
+  x = "#### Errors, questions, and bug report\n",
   file = readme_file,
   append = T
 )
@@ -607,7 +607,7 @@ write(
 )
 
 write(
-  x = "### Code of Conduct\n",
+  x = "#### Code of Conduct\n",
   file = readme_file,
   append = T
 )
@@ -618,7 +618,7 @@ write(
 )
 
 write(
-  x = "### License\n",
+  x = "#### License\n",
   file = readme_file,
   append = T
 )
