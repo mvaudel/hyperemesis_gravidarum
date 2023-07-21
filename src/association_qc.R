@@ -491,9 +491,9 @@ source("src/utils/annotation_utils.R")
 
 args <- commandArgs(TRUE)
 
-if (length(args) != 2) {
+if (length(args) != 3) {
   
-  stop(paste0("Two command line argument expected: regenie results file path, cojo jma file path. ", length(args), " found."))
+  stop(paste0("Three command line argument expected: regenie results file path, cojo jma file path, docs release folder. ", length(args), " found."))
   
 }
 

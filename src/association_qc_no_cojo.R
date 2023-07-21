@@ -365,9 +365,9 @@ source("src/utils/annotation_utils.R")
 
 args <- commandArgs(TRUE)
 
-if (length(args) != 1) {
+if (length(args) != 2) {
   
-  stop(paste0("One command line argument expected: regenie results file path. ", length(args), " found."))
+  stop(paste0("Two command line argument expected: regenie results file path, , docs release folder. ", length(args), " found."))
   
 }
 
