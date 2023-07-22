@@ -488,7 +488,7 @@ rule association_qc:
 rule write_md:
     'Writes md files to link the different results'
     input:
-        md_files = expand(os.path.join(docs_folder, 'regenie', '{gwas_suffix}', '{gwas_suffix}.md'), gwas_suffix = gwas_suffixes)
+        md_files = get_md_cojo()
     params:
         pheno_folder = pheno_folder,
         config_file = config_file,
