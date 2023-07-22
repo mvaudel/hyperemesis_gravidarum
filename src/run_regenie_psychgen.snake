@@ -212,7 +212,7 @@ def get_md_no_cojo():
         phenotype = analyses[analysis]["phenotype"]
         for population in analyses[analysis]["populations"]:
             output_files.append(
-                os.path.join(docs_folder, 'regenie_no_cojo', 'pop_{population}_pheno_{phenotype}', f"pop_{population}_pheno_{phenotype}.md")
+                os.path.join(docs_folder, "regenie_no_cojo", f"pop_{population}_pheno_{phenotype}", f"pop_{population}_pheno_{phenotype}.md")
             )
     return output_files
 
@@ -222,7 +222,7 @@ def get_md_cojo():
         phenotype = analyses[analysis]["phenotype"]
         for population in analyses[analysis]["populations"]:
             output_files.append(
-                os.path.join(docs_folder, 'regenie', 'pop_{population}_pheno_{phenotype}', f"pop_{population}_pheno_{phenotype}.md")
+                os.path.join(docs_folder, "regenie", f"pop_{population}_pheno_{phenotype}", f"pop_{population}_pheno_{phenotype}.md")
             )
     return output_files
 
