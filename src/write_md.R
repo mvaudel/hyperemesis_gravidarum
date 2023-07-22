@@ -563,19 +563,19 @@ if (!dir.exists(plots_folder)) {
     )
 
     write(
-      x = glue("![](regenie/pop_{population}_pheno_{analysis_id}/figures/pop_{population}_pheno_{analysis_id}_mh.png)\n"),
+      x = glue("![](regenie/{analysis_id}/figures/pop_{population}_pheno_{analysis$phenotype}_mh.png)\n"),
       file = analysis_md,
       append = T
     )
     
     write(
-      x = glue("- [Association results](regenie/pop_{population}_pheno_{analysis_id}/pop_{population}_pheno_{analysis_id}.md)\n"),
+      x = glue("- [Association results](regenie/{analysis_id}/pop_{population}_pheno_{analysis$phenotype}.md)\n"),
       file = analysis_md,
       append = T
     )
     
     write(
-      x = glue("- [Results prior to COJO](regenie_no_cojo/pop_{population}_pheno_{analysis_id}/pop_{population}_pheno_{analysis_id}.md)\n\n"),
+      x = glue("- [Results prior to COJO](regenie_no_cojo/{analysis_id}/pop_{population}_pheno_{analysis$phenotype}.md)\n\n"),
       file = analysis_md,
       append = T
     )
