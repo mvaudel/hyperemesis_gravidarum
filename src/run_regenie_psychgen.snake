@@ -289,14 +289,14 @@ rule regenie_step1:
         samples_list = lambda wildcards: get_sample_id_file(wildcards.population),
         variant_list = os.path.join(regenie_step1_folder, "best_snps_mac500.snplist")
     output:
-        output_file = os.path.join(regenie_step1_folder, {analysis}, 'step1_pop_{population}_pheno_{phenotype}_pred.list')
+        output_file = os.path.join(regenie_step1_folder, '{analysis}', 'step1_pop_{population}_pheno_{phenotype}_pred.list')
     params:
         plink_stem = plink_stem,
-        temp_output_file = temp(os.path.join(regenie_step1_folder, {analysis}, 'step1_{population}_{phenotype}_temp')),
+        temp_output_file = temp(os.path.join(regenie_step1_folder, '{analysis}', 'step1_{population}_{phenotype}_temp')),
         pheno_column = lambda wildcards: get_pheno_column(wildcards.analysis),
         pheno_binary = lambda wildcards: get_binary_option_step1(wildcards.analysis),
         pheno_covariates = lambda wildcards: get_covariates(wildcards.analysis, wildcards.population),
-        parameters_output = os.path.join(regenie_step1_folder, {analysis}, 'step1_pop_{population}_pheno_{phenotype}')
+        parameters_output = os.path.join(regenie_step1_folder, '{analysis}', 'step1_pop_{population}_pheno_{phenotype}')
     conda:
         "envs/regenie_3.2.yaml"
     threads: 10
@@ -325,7 +325,7 @@ rule REGENIE_step2:
     input:
         plink_bed = plink_stem + '.bed',
         pheno_file = lambda wildcards: get_pheno_file(wildcards.population),
-        step1_file = os.path.join(regenie_step1_folder, {analysis}, 'step1_pop_{population}_pheno_{phenotype}_pred.list'),
+        step1_file = os.path.join(regenie_step1_folder, '{analysis}', 'step1_pop_{population}_pheno_{phenotype}_pred.list'),
         samples_list = lambda wildcards: get_sample_id_file(wildcards.population)
     output:
         output_file = os.path.join(results_folder, '{analysis}', 'step2_pop_{population}_pheno_{phenotype}.regenie.gz'),
