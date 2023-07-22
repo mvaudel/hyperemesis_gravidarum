@@ -24,11 +24,6 @@ work_folder = os.path.join('/mnt/work/marc/moba', name, suffix)
 
 cojo_threshold = 1e-8
 
-gwas_suffixes = []
-for analysis in analyses_names:
-    for population in analyses[analysis]["populations"]:
-        gwas_suffixes = gwas_suffixes + [f"pop_{population}_pheno_{analysis}"]
-
 
 # Phenotypes
 pheno_tables_folder = os.path.join("/mnt/archive/moba/pheno", pheno_version, pheno_release)
@@ -189,17 +184,61 @@ def get_cojo_chr_files(path):
     return cojo_files
 
 
+############################## Expected output #################################
+
+def get_regenie_output():
+    output_files = list()
+    for analysis in analyses_names:
+        phenotype = analysis["phenotype"]
+        for population in analyses[analysis]["populations"]:
+            output_files.append(
+                os.path.join(results_folder, analysis, f"step2_pop_{population}_pheno_{phenotype}.regenie.gz")
+            )
+    return output_files
+
+def get_cojo_output():
+    output_files = list()
+    for analysis in analyses_names:
+        phenotype = analysis["phenotype"]
+        for population in analyses[analysis]["populations"]:
+            output_files.append(
+                os.path.join(results_folder, analysis, "cojo", f"step2_pop_{population}_pheno_{phenotype}.jma.cojo")
+            )
+    return output_files
+
+def get_md_no_cojo():
+    output_files = list()
+    for analysis in analyses_names:
+        phenotype = analysis["phenotype"]
+        for population in analyses[analysis]["populations"]:
+            output_files.append(
+                os.path.join(docs_folder, 'regenie_no_cojo', 'pop_{population}_pheno_{phenotype}', f"pop_{population}_pheno_{phenotype}.md")
+            )
+    return output_files
+
+def get_md_cojo():
+    output_files = list()
+    for analysis in analyses_names:
+        phenotype = analysis["phenotype"]
+        for population in analyses[analysis]["populations"]:
+            output_files.append(
+                os.path.join(docs_folder, 'regenie', 'pop_{population}_pheno_{phenotype}', f"pop_{population}_pheno_{phenotype}.md")
+            )
+    return output_files
+
+
+
 ############################## RULES ###########################################
 
 print(f"Starting GWAS pipeline for {name}: {analyses_names}.")
 rule all:
     'The final output rule'
     input:
-        expand(os.path.join(results_folder, '{analysis}', 'step2_{gwas_suffix}.regenie.gz'), analysis = analyses_names, gwas_suffix = gwas_suffixes), # The association results
-        expand(os.path.join(docs_folder, 'regenie_no_cojo', '{gwas_suffix}', '{gwas_suffix}.md'), gwas_suffix = gwas_suffixes), # Documentation without cojo
-        expand(os.path.join(results_folder, '{analysis}', 'cojo', 'step2_{gwas_suffix}.jma.cojo'), analysis = analyses_names, gwas_suffix = gwas_suffixes), # Independent GW significant signals
-        expand(os.path.join(docs_folder, 'regenie', '{gwas_suffix}', '{gwas_suffix}.md'), gwas_suffix = gwas_suffixes),  # Documentation with cojo
-        expand("README.md"), # The readme file
+        get_regenie_output(), # The association results
+        get_cojo_output(),# Independent GW significant signals
+        get_md_no_cojo(), # Documentation without cojo
+        get_md_cojo(),  # Documentation with cojo
+        "README.md", # The readme file
 
 
 rule pheno_file:
