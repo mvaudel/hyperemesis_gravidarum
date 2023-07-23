@@ -265,9 +265,9 @@ rule filter_mac:
     params:
         plink_stem = plink_stem,
         best_snps = best_snps,
-        variant_stem = os.path.join(regenie_step1_folder, "best_snps_mac500")
+        variant_stem = os.path.join(moba_psychgen_folder, "utils", "best_snps_mac500")
     output:
-        variant_list = os.path.join(regenie_step1_folder, "best_snps_mac500.snplist")
+        variant_list = os.path.join(moba_psychgen_folder, "utils", "best_snps_mac500.snplist")
     conda:
         "envs/plink_2.yaml"
     threads: 1
@@ -287,7 +287,7 @@ rule regenie_step1:
         plink_bed = plink_stem + '.bed',
         pheno_file = lambda wildcards: get_pheno_file(wildcards.population),
         samples_list = lambda wildcards: get_sample_id_file(wildcards.population),
-        variant_list = os.path.join(regenie_step1_folder, "best_snps_mac500.snplist")
+        variant_list = os.path.join(moba_psychgen_folder, "utils", "best_snps_mac500.snplist")
     output:
         output_file = os.path.join(regenie_step1_folder, '{analysis}', 'step1_pop_{population}_pheno_{phenotype}_pred.list')
     params:
