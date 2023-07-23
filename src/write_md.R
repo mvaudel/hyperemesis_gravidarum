@@ -91,6 +91,11 @@ write(
   file = readme_file,
   append = T
 )
+write(
+  x = glue("The documentation corresponds to the analyses version `{config$suffix}`.\n"),
+  file = readme_file,
+  append = T
+)
 
 write(
   x = glue("### Analyses\n"),
