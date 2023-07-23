@@ -104,6 +104,7 @@ pheno_table <- pregnancy_table %>%
   mutate(
     hg_vs_all = ifelse(hospitalized_prolonged_nausea_vomiting == 1, 1, 0),
     hg_vs_no_nausea_vomiting = ifelse(hospitalized_prolonged_nausea_vomiting == 1, 1, NA),
+    hg_vs_no_nausea_vomiting = ifelse(nausea_vomiting == 1, 0, hg_vs_no_nausea_vomiting),
     vomiting_before_4w = ifelse(!is.na(vomiting_before_4w), 1, 0),
     vomiting_5w_8w = ifelse(!is.na(vomiting_before_4w), 1, 0),
     vomiting_9w_12w = ifelse(!is.na(vomiting_9w_12w), 1, 0),
