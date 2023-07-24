@@ -299,7 +299,7 @@ rule regenie_step1:
         parameters_output = os.path.join(regenie_step1_folder, '{analysis}', 'step1_pop_{population}_pheno_{phenotype}')
     conda:
         "envs/regenie_3.2.yaml"
-    threads: 10
+    threads: 14
     shell:
         """
         regenie \
@@ -337,9 +337,17 @@ rule REGENIE_step2:
         output_stem = os.path.join(results_folder, '{analysis}', 'step2_pop_{population}_pheno')
     conda:
         "envs/regenie_3.2.yaml"
-    threads: 10
+    threads: 14
     shell:
         """
+        
+        REGENIE_FILE={params.output_stem}_{params.pheno_column}.regenie.gz
+        
+        if [[ -f $REGENIE_FILE ]];then
+        
+        touch REGENIE_FILE
+        
+        else
 
         regenie \
         --step 2 \
@@ -358,15 +366,32 @@ rule REGENIE_step2:
         --pred {input.step1_file} \
         --out {params.output_stem} \
         
-        REGENIE_FILE={params.output_stem}_{params.pheno_column}.regenie.gz
-        if [[ -f $REGENIE_FILE ]];then
-            mv $REGENIE_FILE {output.output_file}
+        fi
+        
+        OUTPUT_FILE={output.output_file}
+        
+        if  [ REGENIE_FILE = OUTPUT_FILE ]; then
+        
+            touch OUTPUT_FILE
+        
+        elif [[ -f $REGENIE_FILE ]];then
+        
+            mv $REGENIE_FILE OUTPUT_FILE
+        
         else
+        
             echo "Regenie output file ($REGENIE_FILE) not found"
+        
         fi
         
         """
-#        --verbose # Include to have verbose output in step 2
+
+        # From older versions of the snake file:
+
+        # Include to have verbose output in step 2:
+        # --verbose
+
+
 
 rule regenie_to_cojo:
     'Format Regenie for cojo'
