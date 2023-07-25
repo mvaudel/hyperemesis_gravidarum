@@ -340,14 +340,6 @@ rule REGENIE_step2:
     threads: 14
     shell:
         """
-        
-        REGENIE_FILE={params.output_stem}_{params.pheno_column}.regenie.gz
-        
-        if [[ -f $REGENIE_FILE ]];then
-        
-        touch REGENIE_FILE
-        
-        else
 
         regenie \
         --step 2 \
@@ -366,17 +358,14 @@ rule REGENIE_step2:
         --pred {input.step1_file} \
         --out {params.output_stem} \
         
-        fi
-        
+        REGENIE_FILE={params.output_stem}_{params.pheno_column}.regenie.gz
         OUTPUT_FILE={output.output_file}
         
-        if  [ REGENIE_FILE = OUTPUT_FILE ]; then
+        if  [[ "$REGENIE_FILE" == "$OUTPUT_FILE" ]]; then
         
-            touch OUTPUT_FILE
+        elif [[ -f $REGENIE_FILE ]]; then
         
-        elif [[ -f $REGENIE_FILE ]];then
-        
-            mv $REGENIE_FILE OUTPUT_FILE
+            mv $REGENIE_FILE $OUTPUT_FILE
         
         else
         
