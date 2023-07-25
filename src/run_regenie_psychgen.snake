@@ -363,6 +363,8 @@ rule REGENIE_step2:
         
         if  [[ "$REGENIE_FILE" == "$OUTPUT_FILE" ]]; then
         
+            touch $OUTPUT_FILE
+        
         elif [[ -f $REGENIE_FILE ]]; then
         
             mv $REGENIE_FILE $OUTPUT_FILE
