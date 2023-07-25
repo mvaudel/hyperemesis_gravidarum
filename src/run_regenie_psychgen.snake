@@ -477,7 +477,7 @@ rule association_qc_no_cojo:
     threads: 1
     shell:
         """
-        Rscript src/association_qc_no_cojo.R {input.regenie_file} {params.docs_folder}
+        Rscript src/association_qc_no_cojo.R {input.regenie_file} {params.docs_folder} {wildcards.analysis}
         """
 
 rule association_qc:
@@ -494,7 +494,7 @@ rule association_qc:
     threads: 1
     shell:
         """
-        Rscript src/association_qc.R {input.regenie_file} {input.cojo_file} {params.docs_folder}
+        Rscript src/association_qc.R {input.regenie_file} {input.cojo_file} {params.docs_folder} {wildcards.analysis}
         """
 
 rule write_md:
