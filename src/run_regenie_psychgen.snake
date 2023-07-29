@@ -474,7 +474,7 @@ rule association_qc_no_cojo:
         output_file = os.path.join(docs_folder, 'regenie_no_cojo', '{analysis}', 'pop_{population}_pheno_{phenotype}.md')
     conda:
         "envs/r_gwas.yaml"
-    threads: 1
+    threads: 4
     shell:
         """
         Rscript src/association_qc_no_cojo.R {input.regenie_file} {params.docs_folder} {wildcards.analysis}
@@ -491,7 +491,7 @@ rule association_qc:
         output_file = os.path.join(docs_folder, 'regenie', '{analysis}', 'pop_{population}_pheno_{phenotype}.md')
     conda:
         "envs/r_gwas.yaml"
-    threads: 1
+    threads: 4
     shell:
         """
         Rscript src/association_qc.R {input.regenie_file} {input.cojo_file} {params.docs_folder} {wildcards.analysis}
