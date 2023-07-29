@@ -56,30 +56,6 @@ analyses:
         - mothers
         - fathers
 
-  vomiting_9w_12w:
-      name: Vomiting between week 9 and 12
-      description: GWAS of participants of pregnancies where the mother reported vomiting between week 9 and 12.
-      phenotype: vomiting_9w_12w
-      phenotype_name: vomiting between week 9 and 12
-      phenotype_type: binary
-      covariates:
-      populations:
-        - children
-        - mothers
-        - fathers
-
-  vomiting_13w_15w:
-      name: Vomiting between week 13 and 15
-      description: GWAS of participants of pregnancies where the mother reported vomiting between week 13 and 15.
-      phenotype: vomiting_13w_15w
-      phenotype_name: vomiting between week 13 and 15
-      phenotype_type: binary
-      covariates:
-      populations:
-        - children
-        - mothers
-        - fathers
-
   long_term_nausea_vomiting_after_29w:
       name: Long-term nausea vomiting after week 29
       description: GWAS of participants of pregnancies where the mother reported suffering from long-term nausea vomiting after week 29.
