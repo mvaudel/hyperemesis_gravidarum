@@ -368,7 +368,7 @@ getBetaMaf <- function(
         y = beta
       ),
       col = "grey20",
-      linewidth = 0.8
+      size = 0.8
     ) +
     scale_x_continuous(
       name = "Minor Allele Frequency [%]",
