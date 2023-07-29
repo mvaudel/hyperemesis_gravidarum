@@ -56,18 +56,6 @@ analyses:
         - mothers
         - fathers
 
-  vomiting_5w_8w:
-      name: Vomiting between week 5 and 8
-      description: GWAS of participants of pregnancies where the mother reported vomiting between week 5 and 8.
-      phenotype: vomiting_5w_8w
-      phenotype_name: vomiting between week 5 and 8
-      phenotype_type: binary
-      covariates:
-      populations:
-        - children
-        - mothers
-        - fathers
-
   vomiting_9w_12w:
       name: Vomiting between week 9 and 12
       description: GWAS of participants of pregnancies where the mother reported vomiting between week 9 and 12.
