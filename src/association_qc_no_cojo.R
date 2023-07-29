@@ -78,7 +78,7 @@ getMh <- function(
     geom_hline(
       yintercept = -log10(5e-8), 
       col = "green4", 
-      size = 0.3
+      linewidth = 0.3
     ) + 
     geom_point(
       data = plotDF,
@@ -114,7 +114,7 @@ getMh <- function(
       legend.position = "none",
       panel.grid.minor = element_blank(),
       panel.grid.major.x = element_blank(),
-      panel.grid.major.y = element_line(size = 0.3),
+      panel.grid.major.y = element_line(linewidth = 0.3),
       strip.background = element_rect(
         fill = "grey99"
       )
@@ -181,7 +181,7 @@ getQQ <- function(
     geom_hline(
       yintercept = -log10(5e-8), 
       col = "green4", 
-      size = 0.3
+      linewidth = 0.3
     )  +
     geom_point(
       mapping = aes(
@@ -249,7 +249,7 @@ getBetaMaf <- function(
         yend = beta + qnorm(0.975) * se
       ),
       col = "grey30",
-      size = 0.8
+      linewidth = 0.8
     ) +
     geom_point(
       data = plotDF,
@@ -419,17 +419,19 @@ figures_folder <- file.path(doc_folder, "figures")
 phenoscanner_folder <- file.path(doc_folder, "phenoscanner")
 ensembl_folder <- file.path(doc_folder, "ensembl")
 
-if (dir.exists(doc_folder)) {
-  
-  unlink(
-    x = doc_folder, 
-    recursive = T
-  )
-  
+# Housekeeping
+
+if (!dir.exists(doc_folder)) {
+
+    dir.create(doc_folder)
+
 }
 
-dir.create(doc_folder)
-dir.create(figures_folder)
+if (!dir.exists(figures_folder)) {
+
+    dir.create(figures_folder)
+
+}
 
 
 # Write documentation
