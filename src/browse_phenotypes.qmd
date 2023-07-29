@@ -1,3 +1,7 @@
+---
+format: gfm
+---
+
 # Hyperemesis Gravidarum
 
 This document browses the phenotypes associated with Hyperemesis Gravidarum in MoBa.
@@ -645,5 +649,36 @@ ggplot(
     ggside.panel.background = element_blank(),
     ggside.panel.spacing = unit(0, "pt")
     )
+
+```
+
+### Phenos going to the GWAS
+
+```{r}
+
+pheno_gwas_child <- read.table(
+  file = "/mnt/work/marc/moba/hyperemesis_gravidarum/23-07-21/pheno/v12/pheno_anthropometrics_23-07-12/pheno_child",
+  header = T,
+  sep = " "
+)
+
+pheno_gwas_mother <- read.table(
+  file = "/mnt/work/marc/moba/hyperemesis_gravidarum/23-07-21/pheno/v12/pheno_anthropometrics_23-07-12/pheno_mother",
+  header = T,
+  sep = " "
+)
+
+pheno_gwas_father <- read.table(
+  file = "/mnt/work/marc/moba/hyperemesis_gravidarum/23-07-21/pheno/v12/pheno_anthropometrics_23-07-12/pheno_father",
+  header = T,
+  sep = " "
+)
+
+print("- Child")
+table(pheno_gwas_child$hg_vs_no_nausea_vomiting)
+print("- Mother")
+table(pheno_gwas_mother$hg_vs_no_nausea_vomiting)
+print("- Father")
+table(pheno_gwas_father$hg_vs_no_nausea_vomiting)
 
 ```
