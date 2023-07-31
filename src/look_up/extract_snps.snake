@@ -1,0 +1,72 @@
+import os
+
+##
+#
+# This script extracts summary stats for variants of interest.
+#
+# Commands to execute from the repository folder:
+# conda activate snakemake
+# snakemake --snakefile src/extract_snps.snake --cores 32 --use-conda --rerun-incomplete
+##
+
+config_file = 'look_up.yaml'
+configfile: config_file
+
+variants = config["variants"]
+variants_string = "|".join(variants)
+
+analyses = config["analyses"]
+analyses_names = list(analyses.keys())
+
+results_folder = "src/look_up/resources"
+
+
+####################### Housekeeping #########################################
+
+if not os.path.isdir(results_folder):
+    os.makedirs(results_folder)
+
+
+####################### RUN SETTINGS ###########################################
+
+
+
+
+############################## Expected output #################################
+
+def get_output():
+    output_files = list()
+    for analysis in analyses_names:
+        phenotype = analyses[analysis]["phenotype"]
+        for population in analyses[analysis]["populations"]:
+            output_files.append(
+                os.path.join(results_folder, analysis, f"pop_{population}_pheno_{phenotype}.txt")
+            )
+    return output_files
+
+
+
+############################## RULES ###########################################
+
+print(f"Extracting {variants} in {analyses_names}.")
+rule all:
+    'The final output rule'
+    input:
+        get_output()  # The extracted files
+
+
+rule extract_snps:
+    'Extracts the SNPs of interest from the results of regenie.'
+    input:
+        regenie_file = os.path.join(results_folder, '{analysis}', 'step2_pop_{population}_pheno_{phenotype}.regenie.gz')
+    params:
+        variants_string = variants_string
+    output:
+        regenie_file = os.path.join(results_folder, '{analysis}', "pop_{population}_pheno_{phenotype}.txt")
+    threads: 1
+    shell:
+        """
+        echo zcat {input.regenie_file} | awk 'NR==1 || $2 ~ /^({params.variants_string})$/ > {output.regenie_file}'
+        zcat {input.regenie_file} | awk 'NR==1 || $2 ~ /^({params.variants_string})$/ > {output.regenie_file}'
+        """
+
