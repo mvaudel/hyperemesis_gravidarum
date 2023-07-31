@@ -1,7 +1,9 @@
 # Parameters for the pipeline.
 
 variants:
-  -rs17725099
+  - rs17725099
+
+gwas_version: 23-07-21
 
 analyses:
   hyperemesis_gravidarum_vs_all:

@@ -18,6 +18,9 @@ variants_string = "|".join(variants)
 analyses = config["analyses"]
 analyses_names = list(analyses.keys())
 
+gwas_version = config["gwas_version"]
+
+regenie_folder = work_folder = os.path.join('/mnt/work/marc/moba/hyperemesis_gravidarum', gwas_version, 'results')
 results_folder = "src/look_up/resources"
 
 
@@ -58,7 +61,7 @@ rule all:
 rule extract_snps:
     'Extracts the SNPs of interest from the results of regenie.'
     input:
-        regenie_file = os.path.join(results_folder, '{analysis}', 'step2_pop_{population}_pheno_{phenotype}.regenie.gz')
+        regenie_file = os.path.join(regenie_folder, '{analysis}', 'step2_pop_{population}_pheno_{phenotype}.regenie.gz')
     params:
         variants_string = variants_string
     output:
