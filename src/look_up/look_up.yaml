@@ -30,18 +30,6 @@ analyses:
         - mothers
         - fathers
 
-  nausea_before_4w:
-      name: Nausea before week 4
-      description: GWAS of participants of pregnancies where the mother reported nausea before week 4.
-      phenotype: nausea_before_4w
-      phenotype_name: nausea before week 4
-      phenotype_type: binary
-      covariates:
-      populations:
-        - children
-        - mothers
-        - fathers
-
   vomiting_before_4w:
       name: Vomiting before week 4
       description: GWAS of participants of pregnancies where the mother reported vomiting before week 4.
@@ -101,40 +89,4 @@ analyses:
         - children
         - mothers
         - fathers
-#
-#  nausea:
-#      name: Nausea
-#      description: GWAS of mothers reporting nausea at any time point.
-#      phenotype: nausea_any
-#      phenotype_name: Nausea
-#      phenotype_type: binary
-#      covariates:
-#      populations:
-#        - children
-#        - mothers
-#        - fathers
-#
-#  vomiting:
-#      name: Vomiting
-#      description: GWAS of mothers reporting vomiting at any time point.
-#      phenotype: vomiting_any
-#      phenotype_name: Vomiting
-#      phenotype_type: binary
-#      covariates:
-#      populations:
-#        - children
-#        - mothers
-#        - fathers
-#
-#  long_term_nausea_vomiting:
-#      name: Long-term nausea vomiting
-#      description: GWAS of mothers reporting long-term nausea vomiting.
-#      phenotype: long_term_nausea_vomiting_any
-#      phenotype_name: Long-term nausea vomiting
-#      phenotype_type: binary
-#      covariates:
-#      populations:
-#        - children
-#        - mothers
-#        - fathers
 
