@@ -69,6 +69,6 @@ rule extract_snps:
     threads: 1
     shell:
         """
-        zcat {input.regenie_file} | awk 'NR==1 || $0 ~ /^({params.variants_string})$/' > {output.regenie_file}'
+        zcat {input.regenie_file} | awk 'NR==1 || $0 ~ /{params.variants_string}/' > {output.regenie_file}'
         """
 
