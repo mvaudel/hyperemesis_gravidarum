@@ -9,7 +9,7 @@ import os
 # snakemake --snakefile src/extract_snps.snake --cores 32 --use-conda --rerun-incomplete
 ##
 
-config_file = 'look_up.yaml'
+config_file = 'src/look_up/look_up.yaml'
 configfile: config_file
 
 variants = config["variants"]
@@ -67,6 +67,5 @@ rule extract_snps:
     shell:
         """
         echo zcat {input.regenie_file} | awk 'NR==1 || $2 ~ /^({params.variants_string})$/ > {output.regenie_file}'
-        zcat {input.regenie_file} | awk 'NR==1 || $2 ~ /^({params.variants_string})$/ > {output.regenie_file}'
         """
 
