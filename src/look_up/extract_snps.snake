@@ -55,7 +55,7 @@ print(f"Extracting {variants} in {analyses_names}.")
 rule all:
     'The final output rule'
     input:
-        get_output()  # The extracted files
+        merged_and_wlm_table = os.path.join(results_folder, "look_up_merged.gz")
 
 
 rule extract_snps:
@@ -70,5 +70,22 @@ rule extract_snps:
     shell:
         """
         zcat {input.regenie_file} | awk 'NR==1 || $0 ~ /{params.variants_string}/' > {output.regenie_file}
+        """
+
+rule merge_wlm:
+    'Merges the individual files and runs WLM'
+    input:
+        md_files = get_output()
+    params:
+        look_up_folder = results_folder,
+        config_file = config_file
+    output:
+        output_file = os.path.join(results_folder, "look_up_merged.gz")
+    conda:
+        "envs/r_merge_wlm.yaml"
+    threads: 1
+    shell:
+        """
+        Rscript src/look_up/utils/merge_and_wlm.R {params.config_file} {params.look_up_folder} {output.output_file}
         """
 
