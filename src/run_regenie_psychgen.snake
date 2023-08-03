@@ -235,12 +235,12 @@ rule all:
         mother_pheno_file = get_pheno_file("mothers"),
         father_pheno_file = get_pheno_file("fathers"),
         # The association results
-        # association_results = get_regenie_output(),
-        # cojo_results = get_cojo_output(),
+        association_results = get_regenie_output(),
+        cojo_results = get_cojo_output(),
         # The documentation
-        # documentation_no_cojo = get_md_no_cojo(),
-        # documentation_with_cojo = get_md_cojo(),
-        # readme_file = "README.md", # The readme file
+        documentation_no_cojo = get_md_no_cojo(),
+        documentation_with_cojo = get_md_cojo(),
+        readme_file = "README.md", # The readme file
 
 
 rule pheno_file:
