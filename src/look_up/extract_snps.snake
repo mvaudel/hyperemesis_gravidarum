@@ -55,7 +55,7 @@ print(f"Extracting {variants} in {analyses_names}.")
 rule all:
     'The final output rule'
     input:
-        merged_and_wlm_table = os.path.join(results_folder, "look_up_merged.gz")
+        output_file = os.path.join(results_folder, f"look_up_merged_{gwas_version}.gz")
 
 
 rule extract_snps:
@@ -80,7 +80,7 @@ rule merge_wlm:
         look_up_folder = results_folder,
         config_file = config_file
     output:
-        output_file = os.path.join(results_folder, "look_up_merged.gz")
+        output_file = os.path.join(results_folder, f"look_up_merged_{gwas_version}.gz")
     conda:
         "envs/r_merge_wlm.yaml"
     threads: 1

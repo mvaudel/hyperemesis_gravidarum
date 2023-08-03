@@ -6,7 +6,7 @@ format: gfm
 
 This document browses the phenotypes associated with Hyperemesis Gravidarum in MoBa.
 
-### Libraries
+### Libraries and settings
 
 ```{r}
 

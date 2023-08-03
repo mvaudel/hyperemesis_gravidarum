@@ -1,0 +1,194 @@
+---
+title: "look_up"
+format: gfm
+editor: visual
+---
+
+## Look up of top SNPs
+
+*Look up of bona fide* variants in the GWAS files.
+
+### Libraries and settings
+
+```{r}
+
+library(conflicted)
+library(janitor)
+library(glue)
+library(tidyverse)
+library(ggplot2)
+library(scico)
+library(ggside)
+library(grid)
+
+# Solve name space conflicts
+conflicts_prefer(dplyr::filter)
+
+# General parameters
+theme_set(theme_bw(base_size = 14))
+
+```
+
+### Load data
+
+```{r}
+
+look_up_data = read.table(
+  file = "resources/look_up_merged_23-07-21.gz",
+  header = T,
+  sep = "\t"
+)
+
+```
+
+### Swap alleles
+
+```{r}
+
+ref_analysis = "Hyperemesis gravidarum vs. no nausea vomiting"
+
+for (variant in unique(look_up_data$id)) {
+  
+  variant_data = look_up_data %>% 
+    filter(
+      analysis == ref_analysis & id == variant
+    ) %>% 
+    slice_max(
+      log10p, 
+      n = 1,
+      with_ties = F,
+      na_rm = T
+      )
+  
+  if (variant_data$beta < 0) {
+    
+    look_up_data$beta[look_up_data$id == variant] = -look_up_data$beta[look_up_data$id == variant]
+    
+  }
+  
+}
+
+```
+
+### Functions
+
+```{r}
+
+get_forest_plot = function(
+  data,
+  analysis_name
+) {
+  
+  variants = sort(unique(data$id))
+  
+  analysis_data = data %>% 
+    filter(
+      analysis == analysis_name
+    ) %>% 
+    mutate(
+      variant_factor = factor(id, levels = variants),
+      population_factor = factor(population, levels = rev(c("children", "mothers", "fathers"))),
+      statistics_factor = factor(statistics, levels = rev(c("GWAS", "WLM"))),
+      y = as.numeric(variant_factor) + 0.25 * (as.numeric(population_factor) - 2) + 0.05 * (as.numeric(statistics_factor) - 1.5)
+    )
+  
+  levels(analysis_data$population_factor) = rev(c("Child", "Mother", "Father"))
+  
+  plot = ggplot() +
+    geom_vline(
+      xintercept = 0
+    ) +
+    geom_segment(
+      data = analysis_data,
+      mapping = aes(
+        x = beta - qnorm(0.975) * se,
+        xend = beta + qnorm(0.975) * se,
+        y = y,
+        yend = y,
+        col = population_factor
+      ),
+      linewidth = 0.5
+    ) +
+    geom_segment(
+      data = analysis_data,
+      mapping = aes(
+        x = beta - se,
+        xend = beta + se,
+        y = y,
+        yend = y,
+        col = population_factor
+      ),
+      linewidth = 0.8
+    ) +
+    geom_point(
+      data = analysis_data,
+      mapping = aes(
+        x = beta,
+        y = y,
+        col = population_factor,
+        shape = statistics_factor
+      ),
+      size = 5
+    ) +
+    scale_x_continuous(
+      name = "beta [95% CI]"
+    ) +
+    scale_y_continuous(
+      breaks = 1:length(variants),
+      labels = variants
+    ) +
+    scale_color_manual(
+      values = rev(c("black", scico(n = 2, palette = "cork", begin = 0.2, end = 0.8)))
+    ) + 
+    guides(
+      colour = guide_legend(
+        reverse = T
+        ),
+      shape = guide_legend(
+        reverse = T
+        )
+      ) +
+    theme(
+      axis.title.y = element_blank(),
+      panel.border = element_blank(),
+      panel.grid.major.y = element_blank(),
+      panel.grid.minor.y = element_blank(),
+      legend.title = element_blank()
+    )
+  
+  return(plot)
+  
+}
+
+```
+
+### Forest plots
+
+```{r}
+
+if (!dir.exists("plots")) {
+
+  dir.create("plots")
+  
+}
+
+for (analysis_name in unique(look_up_data$analysis)) {
+  
+  plot = get_forest_plot(
+    data = look_up_data,
+    analysis_name = analysis_name
+  )
+  
+  png(
+    filename = glue("plots/{make_clean_names(analysis_name)}_forest.png"),
+    height = 400,
+    width = 300
+  )
+  grid.draw(plot)
+  device = dev.off()
+  
+  grid.draw(plot + ggtitle(analysis_name))
+  
+}
+
+```
