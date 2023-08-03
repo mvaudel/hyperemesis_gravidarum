@@ -230,11 +230,17 @@ print(f"Starting GWAS pipeline for {name}: {analyses_names}.")
 rule all:
     'The final output rule'
     input:
-        get_regenie_output(), # The association results
-        get_cojo_output(),# Independent GW significant signals
-        get_md_no_cojo(), # Documentation without cojo
-        get_md_cojo(),  # Documentation with cojo
-        "README.md", # The readme file
+        # The phenotype files
+        child_pheno_file = get_pheno_file("children"),
+        mother_pheno_file = get_pheno_file("mothers"),
+        father_pheno_file = get_pheno_file("fathers"),
+        # The association results
+        # association_results = get_regenie_output(),
+        # cojo_results = get_cojo_output(),
+        # The documentation
+        # documentation_no_cojo = get_md_no_cojo(),
+        # documentation_with_cojo = get_md_cojo(),
+        # readme_file = "README.md", # The readme file
 
 
 rule pheno_file:
@@ -248,7 +254,7 @@ rule pheno_file:
     output:
         child_pheno_file = get_pheno_file("children"),
         mother_pheno_file = get_pheno_file("mothers"),
-        father_pheno_file = get_pheno_file("fathers"),
+        father_pheno_file = get_pheno_file("fathers")
     conda:
         "envs/r_pheno.yaml"
     threads: 1
