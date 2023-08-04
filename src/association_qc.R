@@ -595,6 +595,18 @@ write(
   append = T
 )
 
+if (nrow(regenie_output) == 0) {
+  
+  write(
+    x = glue("**Warning:*** The association results contain no SNP with finite p-value, please check the number of cases vs controls."),
+    file = md_file,
+    append = T
+  )
+  
+  return()
+  
+}
+
 write(
   x = glue("### Manhattan"),
   file = md_file,
