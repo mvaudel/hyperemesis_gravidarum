@@ -6,6 +6,8 @@ The documentation corresponds to the analyses version `23-07-21`.
 
 - [Hyperemesis gravidarum vs. no nausea vomiting](docs/23-07-21/hyperemesis_gravidarum_vs_no_nausea_vomiting.md): GWAS of participants of pregnancies where the mother was hospitalized due to prolonged nausea and vomiting.
 
+- [Nausea before week 4](docs/23-07-21/nausea_before_4w.md): GWAS of participants of pregnancies where the mother reported nausea before week 4.
+
 - [Vomiting before week 4](docs/23-07-21/vomiting_before_4w.md): GWAS of participants of pregnancies where the mother reported vomiting before week 4.
 
 - [Long-term nausea vomiting after week 29](docs/23-07-21/long_term_nausea_vomiting_after_29w.md): GWAS of participants of pregnancies where the mother reported suffering from long-term nausea vomiting after week 29.
