@@ -32,6 +32,30 @@ analyses:
         - mothers
         - fathers
 
+  nausea_vomiting:
+      name: Nausea vomiting during pregnancy
+      description: GWAS of participants of pregnancies where the mother suffered from nausea and vomiting.
+      phenotype: nausea_vomiting
+      phenotype_name: Nausea or vomiting reported at any time point.
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  nausea_vomiting_strength:
+      name: Nausea vomiting during pregnancy
+      description: GWAS of participants of pregnancies where the mother suffered from nausea and vomiting.
+      phenotype: nausea_vomiting_strength
+      phenotype_name: Nausea or vomiting reported at any time point encoded as (0) no nausea or vomiting, (1) nausea or vomiting, (2) hospitalized due to nausea or vomiting.
+      phenotype_type: quantitative
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
   nausea_before_4w:
       name: Nausea before week 4
       description: GWAS of participants of pregnancies where the mother reported nausea before week 4.
@@ -56,11 +80,83 @@ analyses:
         - mothers
         - fathers
 
+  nausea_vomiting_before_4w:
+      name: Nausea vomiting before week 4
+      description: GWAS of participants of pregnancies where the mother reported nausea vomiting before week 4.
+      phenotype: nausea_vomiting_before_4w
+      phenotype_name: vomiting before week 4
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  nausea_vomiting_before_8w:
+      name: Nausea vomiting before week 8
+      description: GWAS of participants of pregnancies where the mother reported nausea vomiting before week 8.
+      phenotype: nausea_vomiting_before_8w
+      phenotype_name: vomiting before week 8
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
   long_term_nausea_vomiting_after_29w:
       name: Long-term nausea vomiting after week 29
       description: GWAS of participants of pregnancies where the mother reported suffering from long-term nausea vomiting after week 29.
       phenotype: long_term_nausea_vomiting_after_29w
       phenotype_name: long-term nausea vomiting after week 29
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  long_term_nausea_vomiting_after_25w:
+      name: Long-term nausea vomiting after week 25
+      description: GWAS of participants of pregnancies where the mother reported suffering from long-term nausea vomiting after week 25.
+      phenotype: long_term_nausea_vomiting_after_25w
+      phenotype_name: long-term nausea vomiting after week 25
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  long_term_nausea_vomiting_after_21w:
+      name: Long-term nausea vomiting after week 21
+      description: GWAS of participants of pregnancies where the mother reported suffering from long-term nausea vomiting after week 21.
+      phenotype: long_term_nausea_vomiting_after_21w
+      phenotype_name: long-term nausea vomiting after week 21
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  long_term_nausea_vomiting_after_17w:
+      name: Long-term nausea vomiting after week 17
+      description: GWAS of participants of pregnancies where the mother reported suffering from long-term nausea vomiting after week 17.
+      phenotype: long_term_nausea_vomiting_after_17w
+      phenotype_name: long-term nausea vomiting after week 17
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  long_term_nausea_vomiting_after_13w:
+      name: Long-term nausea vomiting after week 12
+      description: GWAS of participants of pregnancies where the mother reported suffering from long-term nausea vomiting after week 13.
+      phenotype: long_term_nausea_vomiting_after_13w
+      phenotype_name: long-term nausea vomiting after week 13
       phenotype_type: binary
       covariates:
       populations:

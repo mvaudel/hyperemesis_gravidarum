@@ -114,8 +114,16 @@ pheno_table <- pregnancy_table %>%
   ) %>% 
   mutate(
     hg_vs_all = ifelse(hospitalized_prolonged_nausea_vomiting == 1, 1, 0),
-    hg_vs_no_nausea_vomiting = ifelse(nausea_vomiting == 0, 0, NA),
-    hg_vs_no_nausea_vomiting = ifelse(hospitalized_prolonged_nausea_vomiting == 1, 1, hg_vs_no_nausea_vomiting),
+    no_nausea_vomiting_controls = ifelse(nausea_vomiting == 0, 0, NA),
+    hg_vs_no_nausea_vomiting = ifelse(hospitalized_prolonged_nausea_vomiting == 1, 1, no_nausea_vomiting_controls),
+    hg_vs_no_nausea_vomiting_0_4w = ifelse(hospitalized_prolonged_nausea_vomiting_0_4w == 1, 1, no_nausea_vomiting_controls),
+    hg_vs_no_nausea_vomiting_5_8w = ifelse(hospitalized_prolonged_nausea_vomiting_5_8w == 1, 1, no_nausea_vomiting_controls),
+    hg_vs_no_nausea_vomiting_9_12w = ifelse(hospitalized_prolonged_nausea_vomiting_9_12w == 1, 1, no_nausea_vomiting_controls),
+    hg_vs_no_nausea_vomiting_13_16w = ifelse(hospitalized_prolonged_nausea_vomiting_13_16w == 1, 1, no_nausea_vomiting_controls),
+    hg_vs_no_nausea_vomiting_17_20w = ifelse(hospitalized_prolonged_nausea_vomiting_17_20w == 1, 1, no_nausea_vomiting_controls),
+    hg_vs_no_nausea_vomiting_21_24w = ifelse(hospitalized_prolonged_nausea_vomiting_21_24w == 1, 1, no_nausea_vomiting_controls),
+    hg_vs_no_nausea_vomiting_25_28w = ifelse(hospitalized_prolonged_nausea_vomiting_25_28w == 1, 1, no_nausea_vomiting_controls),
+    hg_vs_no_nausea_vomiting_after_29w = ifelse(hospitalized_prolonged_nausea_vomiting_after_29w == 1, 1, no_nausea_vomiting_controls),
     vomiting_before_8w = ifelse(!is.na(vomiting_before_4w) | !is.na(vomiting_5w_8w), 1, 0),
     vomiting_before_4w = ifelse(!is.na(vomiting_before_4w), 1, 0),
     vomiting_5w_8w = ifelse(!is.na(vomiting_5w_8w), 1, 0),
