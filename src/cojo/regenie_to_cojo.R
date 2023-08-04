@@ -131,7 +131,15 @@ write.table(
 
 # Write one cojo input file per chromosome
 
+chr_22 <- F
+
 for (chromosome in unique(regenie_results$CHROM)) {
+  
+  if (chromosome == 22) {
+    
+    chr_22 <- T
+    
+  }
   
   print(paste0(Sys.time(), " - Formatting ", regenieFileName, ": exporting results for COJO chromosome ", chromosome))
   
@@ -194,6 +202,12 @@ for (chromosome in unique(regenie_results$CHROM)) {
     file.remove(output_file)
     
   }
+}
+
+if (!chr_22) {
+  
+  stop(paste0("Chromosome 22 not found in ", regenieFileName, " please check that the regenie output file is not trucated."))
+  
 }
 
 
