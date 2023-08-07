@@ -85,7 +85,7 @@ getPhenoscannerDocs <- function(
     phenoscannerCacheFile <- file.path(phenoScannerCacheFolder, paste0(variantId, ".gz"))
     phenoscannerTextFile <- file.path(phenoscannerFolder, paste0(variantId, ".gz"))
     
-    if (file.exists(phenoscannerCacheFile)) {
+    if (file.exists(phenoscannerCacheFile) && file.exists(phenoscannerTextFile)) {
         
         resultsDF <- read.table(
             file = gzfile(phenoscannerCacheFile),
