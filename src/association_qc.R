@@ -568,13 +568,13 @@ if (!dir.exists(figures_folder)) {
 
 }
 
-if (!dir.exists(figures_folder)) {
+if (!dir.exists(phenoscanner_folder)) {
 
     dir.create(phenoscanner_folder)
 
 }
 
-if (!dir.exists(figures_folder)) {
+if (!dir.exists(ensembl_folder)) {
 
     dir.create(ensembl_folder)
 
