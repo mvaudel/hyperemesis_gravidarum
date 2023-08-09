@@ -6,11 +6,27 @@ The documentation corresponds to the analyses version `23-07-21`.
 
 - [Hyperemesis gravidarum vs. no nausea vomiting](docs/23-07-21/hyperemesis_gravidarum_vs_no_nausea_vomiting.md): GWAS of participants of pregnancies where the mother was hospitalized due to prolonged nausea and vomiting.
 
+- [Nausea vomiting during pregnancy](docs/23-07-21/nausea_vomiting.md): GWAS of participants of pregnancies where the mother suffered from nausea and vomiting.
+
+- [Nausea vomiting during pregnancy](docs/23-07-21/nausea_vomiting_strength.md): GWAS of participants of pregnancies where the mother suffered from nausea and vomiting.
+
 - [Nausea before week 4](docs/23-07-21/nausea_before_4w.md): GWAS of participants of pregnancies where the mother reported nausea before week 4.
 
 - [Vomiting before week 4](docs/23-07-21/vomiting_before_4w.md): GWAS of participants of pregnancies where the mother reported vomiting before week 4.
 
+- [Nausea vomiting before week 4](docs/23-07-21/nausea_vomiting_before_4w.md): GWAS of participants of pregnancies where the mother reported nausea vomiting before week 4.
+
+- [Nausea vomiting before week 8](docs/23-07-21/nausea_vomiting_before_8w.md): GWAS of participants of pregnancies where the mother reported nausea vomiting before week 8.
+
 - [Long-term nausea vomiting after week 29](docs/23-07-21/long_term_nausea_vomiting_after_29w.md): GWAS of participants of pregnancies where the mother reported suffering from long-term nausea vomiting after week 29.
+
+- [Long-term nausea vomiting after week 25](docs/23-07-21/long_term_nausea_vomiting_after_25w.md): GWAS of participants of pregnancies where the mother reported suffering from long-term nausea vomiting after week 25.
+
+- [Long-term nausea vomiting after week 21](docs/23-07-21/long_term_nausea_vomiting_after_21w.md): GWAS of participants of pregnancies where the mother reported suffering from long-term nausea vomiting after week 21.
+
+- [Long-term nausea vomiting after week 17](docs/23-07-21/long_term_nausea_vomiting_after_17w.md): GWAS of participants of pregnancies where the mother reported suffering from long-term nausea vomiting after week 17.
+
+- [Long-term nausea vomiting after week 12](docs/23-07-21/long_term_nausea_vomiting_after_13w.md): GWAS of participants of pregnancies where the mother reported suffering from long-term nausea vomiting after week 13.
 
 - [Vomiting start](docs/23-07-21/vomiting_week_from.md): GWAS of participants of pregnancies against the week where mothers reported beginning to suffer from vomiting.
 
