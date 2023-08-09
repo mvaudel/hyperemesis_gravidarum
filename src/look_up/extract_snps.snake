@@ -6,7 +6,7 @@ import os
 #
 # Commands to execute from the repository folder:
 # conda activate snakemake
-# snakemake --snakefile src/extract_snps.snake --cores 32 --use-conda --rerun-incomplete
+# snakemake --snakefile src/look_up/extract_snps.snake --cores 32 --use-conda --rerun-incomplete
 ##
 
 config_file = 'src/look_up/look_up.yaml'

@@ -1,6 +1,11 @@
 # Parameters for the pipeline.
 
 variants:
+  - rs1441062
+  - rs4754750
+  - rs35673587
+  - rs45543339
+  - rs57452279
   - rs17725099
   - rs4865234
 
