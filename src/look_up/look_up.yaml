@@ -2,12 +2,25 @@
 
 variants:
   - rs1441062
+  - rs143409503
   - rs4754750
+  - rs4707680
   - rs35673587
   - rs45543339
+  - rs16982345
   - rs57452279
-  - rs17725099
-  - rs4865234
+  - rs201838815
+
+loci:
+  - IGFBP7 MoBa
+  - IGFBP7 NatComm
+  - TRPC6 MoBa
+  - TRPC6 NatComm
+  - GDF15 MoBa
+  - GDF15 MoBa
+  - GDF15 NatComm
+  - UPB1 MoBa
+  - UPB1 NatComm
 
 gwas_version: 23-07-21
 

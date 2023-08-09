@@ -34,11 +34,24 @@ theme_set(theme_bw(base_size = 14))
 
 ```{r}
 
+# Summary stats
+
 look_up_data = read.table(
   file = "resources/look_up_merged_23-07-21.gz",
   header = T,
   sep = "\t"
 )
+
+# Config
+
+config = read_yaml("look_up.yaml")
+
+
+# Locus names
+loci = config$loci
+names(loci) = config$variants
+
+look_up_data$locus = loci[look_up_data$id]
 
 ```
 
