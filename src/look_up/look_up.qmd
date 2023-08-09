@@ -34,14 +34,6 @@ theme_set(theme_bw(base_size = 14))
 
 ```{r}
 
-# Summary stats
-
-look_up_data = read.table(
-  file = "resources/look_up_merged_23-07-21.gz",
-  header = T,
-  sep = "\t"
-)
-
 # Config
 
 config = read_yaml("look_up.yaml")
@@ -52,6 +44,17 @@ loci = config$loci
 names(loci) = config$variants
 
 look_up_data$locus = loci[look_up_data$id]
+
+# Summary stats
+
+look_up_data = read.table(
+  file = "resources/look_up_merged_23-07-21.gz",
+  header = T,
+  sep = "\t"
+) %>% 
+  filter(
+    id %in% config$variants
+  )
 
 ```
 
@@ -90,14 +93,18 @@ for (variant in unique(look_up_data$id)) {
 
 get_forest_plot = function(
   data,
-  analysis_name
+  phenotype_name
 ) {
   
   variants = sort(unique(data$id))
+  names = paste0(loci[variants], " (", variants, ")")
   
   analysis_data = data %>% 
     filter(
-      analysis == analysis_name
+      phenotype == phenotype_name
+    ) %>% 
+    arrange(
+      chr, pos
     ) %>% 
     mutate(
       variant_factor = factor(id, levels = variants),
@@ -149,7 +156,7 @@ get_forest_plot = function(
     ) +
     scale_y_continuous(
       breaks = 1:length(variants),
-      labels = variants,
+      labels = names,
       limits = c(0.5, length(variants) + 0.5)
     ) +
     scale_color_manual(
@@ -187,15 +194,15 @@ if (!dir.exists("plots")) {
   
 }
 
-for (analysis_name in unique(look_up_data$analysis)) {
+for (phenotype in unique(look_up_data$phenotype)) {
   
   plot = get_forest_plot(
     data = look_up_data,
-    analysis_name = analysis_name
+    phenotype_name = phenotype
   )
   
   agg_png(
-    filename = glue("plots/{make_clean_names(analysis_name)}_forest.png"),
+    filename = glue("plots/{make_clean_names(phenotype)}_forest.png"),
     height = 600,
     width = 900,
     scaling = 1.5

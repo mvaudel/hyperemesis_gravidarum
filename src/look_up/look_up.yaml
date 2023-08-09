@@ -49,6 +49,102 @@ analyses:
         - mothers
         - fathers
 
+  hospitalized_vs_no_nausea_vomiting_0_4w:
+      name: Hospitalized vs. no nausea vomiting week 0 to 4
+      description: GWAS of participants of pregnancies where the mother was hospitalized due to prolonged nausea and vomiting stratfied by week.
+      phenotype: hg_vs_no_nausea_vomiting_0_4w
+      phenotype_name: hospitalized due to prolonged nausea and vomiting before week 4 (1) or no nausea or vomiting was reported (0).
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  hospitalized_vs_no_nausea_vomiting_5_8w:
+      name: Hospitalized vs. no nausea vomiting week 5 to 8
+      description: GWAS of participants of pregnancies where the mother was hospitalized due to prolonged nausea and vomiting stratfied by week.
+      phenotype: hg_vs_no_nausea_vomiting_5_8w
+      phenotype_name: hospitalized due to prolonged nausea and vomiting week 5 to 8 (1) or no nausea or vomiting was reported (0).
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  hospitalized_vs_no_nausea_vomiting_9_12w:
+      name: Hospitalized vs. no nausea vomiting week 9 to 12
+      description: GWAS of participants of pregnancies where the mother was hospitalized due to prolonged nausea and vomiting stratfied by week.
+      phenotype: hg_vs_no_nausea_vomiting_9_12w
+      phenotype_name: hospitalized due to prolonged nausea and vomiting week 9 to 12 (1) or no nausea or vomiting was reported (0).
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  hospitalized_vs_no_nausea_vomiting_13_16w:
+      name: Hospitalized vs. no nausea vomiting week 13 to 16
+      description: GWAS of participants of pregnancies where the mother was hospitalized due to prolonged nausea and vomiting stratfied by week.
+      phenotype: hg_vs_no_nausea_vomiting_13_16w
+      phenotype_name: hospitalized due to prolonged nausea and vomiting week 13 to 16 (1) or no nausea or vomiting was reported (0).
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  hospitalized_vs_no_nausea_vomiting_17_20w:
+      name: Hospitalized vs. no nausea vomiting week 17 to 20
+      description: GWAS of participants of pregnancies where the mother was hospitalized due to prolonged nausea and vomiting stratfied by week.
+      phenotype: hg_vs_no_nausea_vomiting_17_20w
+      phenotype_name: hospitalized due to prolonged nausea and vomiting week 17 to 20 (1) or no nausea or vomiting was reported (0).
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  hospitalized_vs_no_nausea_vomiting_21_24w:
+      name: Hospitalized vs. no nausea vomiting week 21 to 24
+      description: GWAS of participants of pregnancies where the mother was hospitalized due to prolonged nausea and vomiting stratfied by week.
+      phenotype: hg_vs_no_nausea_vomiting_21_24w
+      phenotype_name: hospitalized due to prolonged nausea and vomiting week 21 to 24 (1) or no nausea or vomiting was reported (0).
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  hospitalized_vs_no_nausea_vomiting_25_28w:
+      name: Hospitalized vs. no nausea vomiting week 25 to 28
+      description: GWAS of participants of pregnancies where the mother was hospitalized due to prolonged nausea and vomiting stratfied by week.
+      phenotype: hg_vs_no_nausea_vomiting_25_28w
+      phenotype_name: hospitalized due to prolonged nausea and vomiting week 25 to 28 (1) or no nausea or vomiting was reported (0).
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  hospitalized_vs_no_nausea_vomiting_after_29w:
+      name: Hospitalized vs. no nausea vomiting after week 29
+      description: GWAS of participants of pregnancies where the mother was hospitalized due to prolonged nausea and vomiting stratfied by week.
+      phenotype: hg_vs_no_nausea_vomiting_after_29w
+      phenotype_name: hospitalized due to prolonged nausea and vomiting after week 29 (1) or no nausea or vomiting was reported (0).
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
   nausea_vomiting:
       name: Nausea vomiting during pregnancy
       description: GWAS of participants of pregnancies where the mother suffered from nausea and vomiting.
@@ -101,7 +197,7 @@ analyses:
       name: Nausea vomiting before week 4
       description: GWAS of participants of pregnancies where the mother reported nausea vomiting before week 4.
       phenotype: nausea_vomiting_before_4w
-      phenotype_name: vomiting before week 4
+      phenotype_name: nausea vomiting before week 4
       phenotype_type: binary
       covariates:
       populations:
@@ -109,11 +205,83 @@ analyses:
         - mothers
         - fathers
 
-  nausea_vomiting_before_8w:
-      name: Nausea vomiting before week 8
-      description: GWAS of participants of pregnancies where the mother reported nausea vomiting before week 8.
-      phenotype: nausea_vomiting_before_8w
-      phenotype_name: vomiting before week 8
+  nausea_vomiting_before_5w_8w:
+      name: Nausea vomiting week 5 to 8
+      description: GWAS of participants of pregnancies where the mother reported nausea vomiting stratified by week.
+      phenotype: nausea_vomiting_5w_8w
+      phenotype_name: nausea vomiting week 5 to 8
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  nausea_vomiting_before_9w_12w:
+      name: Nausea vomiting week 9 to 12
+      description: GWAS of participants of pregnancies where the mother reported nausea vomiting stratified by week.
+      phenotype: nausea_vomiting_9w_12w
+      phenotype_name: vomiting week 9 to 12
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  nausea_vomiting_before_13w_15w:
+      name: Nausea vomiting week 13 to 15
+      description: GWAS of participants of pregnancies where the mother reported nausea vomiting stratified by week.
+      phenotype: nausea_vomiting_13w_15w
+      phenotype_name: vomiting week 13 to 15
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  long_term_nausea_vomiting_13w_16w:
+      name: Nausea vomiting week 13 to 16
+      description: GWAS of participants of pregnancies where the mother reported nausea vomiting stratified by week.
+      phenotype: long_term_nausea_vomiting_13w_16w
+      phenotype_name: vomiting week 13 to 16
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  long_term_nausea_vomiting_17w_20w:
+      name: Nausea vomiting week 17 to 20
+      description: GWAS of participants of pregnancies where the mother reported nausea vomiting stratified by week.
+      phenotype: long_term_nausea_vomiting_17w_20w
+      phenotype_name: vomiting week 17 to 20
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  long_term_nausea_vomiting_21w_24w:
+      name: Nausea vomiting week 21 to 24
+      description: GWAS of participants of pregnancies where the mother reported nausea vomiting stratified by week.
+      phenotype: long_term_nausea_vomiting_21w_24w
+      phenotype_name: vomiting week 21 to 24
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  long_term_nausea_vomiting_25w_28w:
+      name: Nausea vomiting week 25 to 29
+      description: GWAS of participants of pregnancies where the mother reported nausea vomiting stratified by week.
+      phenotype: long_term_nausea_vomiting_25w_28w
+      phenotype_name: vomiting week 25 to 28
       phenotype_type: binary
       covariates:
       populations:
@@ -126,6 +294,18 @@ analyses:
       description: GWAS of participants of pregnancies where the mother reported suffering from long-term nausea vomiting after week 29.
       phenotype: long_term_nausea_vomiting_after_29w
       phenotype_name: long-term nausea vomiting after week 29
+      phenotype_type: binary
+      covariates:
+      populations:
+        - children
+        - mothers
+        - fathers
+
+  nausea_vomiting_before_8w:
+      name: Nausea vomiting before week 8
+      description: GWAS of participants of pregnancies where the mother reported nausea vomiting before week 8.
+      phenotype: nausea_vomiting_before_8w
+      phenotype_name: vomiting before week 8
       phenotype_type: binary
       covariates:
       populations:
