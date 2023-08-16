@@ -16,9 +16,23 @@ The documentation corresponds to the analyses version `23-07-21`.
 
 - [Nausea vomiting before week 4](docs/23-07-21/nausea_vomiting_before_4w.md): GWAS of participants of pregnancies where the mother reported nausea vomiting before week 4.
 
-- [Nausea vomiting before week 8](docs/23-07-21/nausea_vomiting_before_8w.md): GWAS of participants of pregnancies where the mother reported nausea vomiting before week 8.
+- [Nausea vomiting week 5 to 8](docs/23-07-21/nausea_vomiting_5w_8w.md): GWAS of participants of pregnancies where the mother reported nausea vomiting stratified by week.
+
+- [Nausea vomiting week 9 to 12](docs/23-07-21/nausea_vomiting_9w_12w.md): GWAS of participants of pregnancies where the mother reported nausea vomiting stratified by week.
+
+- [Nausea vomiting week 13 to 15](docs/23-07-21/nausea_vomiting_13w_15w.md): GWAS of participants of pregnancies where the mother reported nausea vomiting stratified by week.
+
+- [Nausea vomiting week 13 to 16](docs/23-07-21/long_term_nausea_vomiting_13w_16w.md): GWAS of participants of pregnancies where the mother reported nausea vomiting stratified by week.
+
+- [Nausea vomiting week 17 to 20](docs/23-07-21/long_term_nausea_vomiting_17w_20w.md): GWAS of participants of pregnancies where the mother reported nausea vomiting stratified by week.
+
+- [Nausea vomiting week 21 to 24](docs/23-07-21/long_term_nausea_vomiting_21w_24w.md): GWAS of participants of pregnancies where the mother reported nausea vomiting stratified by week.
+
+- [Nausea vomiting week 25 to 29](docs/23-07-21/long_term_nausea_vomiting_25w_28w.md): GWAS of participants of pregnancies where the mother reported nausea vomiting stratified by week.
 
 - [Long-term nausea vomiting after week 29](docs/23-07-21/long_term_nausea_vomiting_after_29w.md): GWAS of participants of pregnancies where the mother reported suffering from long-term nausea vomiting after week 29.
+
+- [Nausea vomiting before week 8](docs/23-07-21/nausea_vomiting_before_8w.md): GWAS of participants of pregnancies where the mother reported nausea vomiting before week 8.
 
 - [Long-term nausea vomiting after week 25](docs/23-07-21/long_term_nausea_vomiting_after_25w.md): GWAS of participants of pregnancies where the mother reported suffering from long-term nausea vomiting after week 25.
 
