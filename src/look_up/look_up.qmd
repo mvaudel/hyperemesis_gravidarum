@@ -13,6 +13,7 @@ editor: visual
 ```{r}
 
 library(conflicted)
+library(yaml)
 library(janitor)
 library(glue)
 library(tidyverse)
@@ -43,8 +44,6 @@ config = read_yaml("look_up.yaml")
 loci = config$loci
 names(loci) = config$variants
 
-look_up_data$locus = loci[look_up_data$id]
-
 # Summary stats
 
 look_up_data = read.table(
@@ -55,6 +54,8 @@ look_up_data = read.table(
   filter(
     id %in% config$variants
   )
+
+look_up_data$locus = loci[look_up_data$id]
 
 ```
 
@@ -210,8 +211,247 @@ for (phenotype in unique(look_up_data$phenotype)) {
   grid.draw(plot)
   device = dev.off()
   
-  grid.draw(plot + ggtitle(analysis_name))
+  grid.draw(plot + ggtitle(phenotype))
   
 }
 
+```
+
+### Time-resolved plots
+
+```{r}
+
+nvp_time = data.frame(
+  phenotype = c("nausea_vomiting_before_4w", "nausea_vomiting_5w_8w", "nausea_vomiting_9w_12w", "long_term_nausea_vomiting_13w_16w", "long_term_nausea_vomiting_17w_20w", "long_term_nausea_vomiting_after_21w"),
+  week = c("Before 4", "4 to 8", "9 to 12", "13 to 16", "17 to 20", "After 21"),
+  week_value = c(2, 6, 10.5, 14.5, 18.5, 22.5)
+)
+
+nvp_time_plot = look_up_data %>% 
+  filter(
+    phenotype %in% nvp_time$phenotype & population %in% c("children", "mothers") & statistics == "WLM"
+  ) %>% 
+  left_join(
+    nvp_time,
+    by = "phenotype"
+  ) %>% 
+  mutate(
+    week_factor = factor(week),
+    locus = loci[id],
+    name = paste0(locus, " (", id, ")"),
+    p_category = case_when(
+      log10p > 8 ~ "p < 10-8",
+      log10p > 6 ~ "p < 10-6",
+      log10p > 4 ~ "p < 10-4",
+      log10p > 2 ~ "p < 10-2",
+      T        ~ "p >= 10-2"
+    ),
+    p_category_factor = factor(p_category, levels = c("p >= 10-2", "p < 10-2", "p < 10-4", "p < 10-6", "p < 10-8")),
+    dx = (as.numeric(factor(population)) - 1.5) / 2
+  )
+
+for (variant_id in unique(nvp_time_plot$id)) {
+  
+  plot_data = nvp_time_plot %>% 
+    filter(
+      id == variant_id
+    )
+
+time_plot = ggplot() +
+  geom_hline(
+    yintercept = 0,
+    col = "black"
+  ) +
+  geom_segment(
+    data = plot_data,
+    mapping = aes(
+      x = week_value + dx,
+      xend = week_value + dx,
+      y = beta - qnorm(0.975) * se,
+      yend = beta + qnorm(0.975) * se,
+      col = population
+    ),
+    alpha = 0.8,
+    size = 1
+  ) +
+  geom_line(
+    data = plot_data,
+    mapping = aes(
+      x = week_value + dx,
+      y = beta,
+      col = population
+    ),
+    size = 1,
+    linetype = "dotted"
+  ) +
+  geom_point(
+    data = plot_data,
+    mapping = aes(
+      x = week_value + dx,
+      y = beta,
+      col = population,
+      size = p_category_factor
+    )
+  ) +
+  scale_x_continuous(
+    name = "gestational week",
+    breaks = nvp_time$week_value,
+    labels = nvp_time$week
+  ) +
+  scale_y_continuous(
+    name = "beta [95% CI]"
+  ) +
+  scale_color_manual(
+      values = c("black", scico(n = 2, palette = "cork", begin = 0.2, end = 0.8)[1])
+  ) +
+  scale_size_discrete(
+    drop = F
+  ) +
+    guides(
+      colour = guide_legend(
+        reverse = F
+        ),
+      shape = guide_legend(
+        reverse = T
+        )
+      ) +
+  theme(
+    legend.title = element_blank(),
+    legend.position = "top",
+    legend.box = "vertical",
+    panel.border = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+  
+  agg_png(
+    filename = glue("plots/{make_clean_names(variant_id)}_nvp_time.png"),
+    height = 600,
+    width = 900,
+    scaling = 1.5
+  )
+  grid.draw(time_plot)
+  device = dev.off()
+  
+  grid.draw(time_plot + ggtitle(plot_data$name[1] ))
+  
+}
+
+```
+
+### All variants, mothers only
+
+```{r}
+
+variants_to_plot = c("rs1441062", "rs4754750", "rs45543339", "rs57452279")
+loci_to_plot = c("IGFBP7", "TRPC6", "GDF15", "UPB1")
+
+
+nvp_others_time_plot = look_up_data %>% 
+  filter(
+    phenotype %in% nvp_time$phenotype & population %in% c("mothers") & statistics == "GWAS" & id %in% variants_to_plot
+  ) %>% 
+  left_join(
+    nvp_time,
+    by = "phenotype"
+  ) %>% 
+  mutate(
+    week_factor = factor(week),
+    locus = loci[id],
+    name = paste0(locus, " (", id, ")"),
+    p_category = case_when(
+      log10p > 8 ~ "p < 10-8",
+      log10p > 6 ~ "p < 10-6",
+      log10p > 4 ~ "p < 10-4",
+      log10p > 2 ~ "p < 10-2",
+      T        ~ "p >= 10-2"
+    ),
+    p_category_factor = factor(p_category, levels = c("p >= 10-2", "p < 10-2", "p < 10-4", "p < 10-6", "p < 10-8")),
+    id_factor = factor(id, levels = variants_to_plot),
+    dx = (as.numeric(id_factor) - length(variants_to_plot) / 2 - 0.5) / length(variants_to_plot)
+  )
+
+time_plot_mothers = ggplot() +
+  geom_hline(
+    yintercept = 0,
+    col = "black"
+  ) +
+  geom_segment(
+    data = nvp_others_time_plot,
+    mapping = aes(
+      x = week_value + dx,
+      xend = week_value + dx,
+      y = beta - qnorm(0.975) * se,
+      yend = beta + qnorm(0.975) * se,
+      col = id_factor
+    ),
+    alpha = 0.8,
+    size = 1
+  ) +
+  geom_line(
+    data = nvp_others_time_plot,
+    mapping = aes(
+      x = week_value + dx,
+      y = beta,
+      col = id_factor
+    ),
+    size = 1,
+    linetype = "dotted"
+  ) +
+  geom_point(
+    data = nvp_others_time_plot,
+    mapping = aes(
+      x = week_value + dx,
+      y = beta,
+      col = id_factor,
+      size = p_category_factor
+    )
+  ) +
+  scale_x_continuous(
+    name = "gestational week",
+    breaks = nvp_time$week_value,
+    labels = nvp_time$week
+  ) +
+  scale_y_continuous(
+    name = "beta [95% CI]"
+  ) +
+  scale_color_manual(
+    values = scico(
+      n = length(variants_to_plot),
+      palette = "batlow",
+      begin = 0.3,
+      end = 0.7
+    ),
+    labels = loci_to_plot
+  ) +
+  scale_size_discrete(
+    drop = F
+  ) +
+    guides(
+      colour = guide_legend(
+        reverse = F
+        ),
+      shape = guide_legend(
+        reverse = T
+        )
+      ) +
+  theme(
+    legend.title = element_blank(),
+    legend.position = "top",
+    legend.box = "vertical",
+    panel.border = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+  
+  agg_png(
+    filename = glue("plots/nvp_time_mothers.png"),
+    height = 600,
+    width = 900,
+    scaling = 1.5
+  )
+  grid.draw(time_plot_mothers)
+  device = dev.off()
+  
+  time_plot_mothers
 ```
