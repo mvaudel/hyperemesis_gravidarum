@@ -1,0 +1,368 @@
+---
+format: gfm
+---
+
+# Results meta
+
+This document browses the resutls of the meta.
+
+### Libraries and settings
+
+```{r}
+
+library(conflicted)
+library(janitor)
+library(glue)
+library(tidyverse)
+library(curl)
+library(httr)
+library(rjson)
+library(ggplot2)
+library(scico)
+library(ggside)
+
+# Solve name space conflicts
+conflicts_prefer(dplyr::filter)
+
+# General parameters
+theme_set(theme_bw(base_size = 14))
+
+```
+
+### Load data
+
+```{r}
+
+meta_results <- read.table(
+  file = "resources/meta",
+  header = T,
+  sep = "\t"
+) %>% 
+  clean_names()
+
+```
+
+
+### Select top hits
+
+```{r}
+
+bpLimit <- 100000
+
+top_hits <- c()
+temp_table <- meta_results %>% 
+  arrange(
+    p
+  )
+
+while(nrow(temp_table) > 0) {
+  
+  top_hits[length(top_hits) + 1] <- temp_table$snp[1]
+  current_chr <- temp_table$chr[1]
+  current_pos <- temp_table$pos[1]
+  
+  temp_table <- temp_table %>% 
+    filter(
+      chr != current_chr | abs(pos - current_pos) > bpLimit
+    )
+  
+}
+
+top_hits_table <- meta_results %>% 
+  filter(
+    snp %in% top_hits
+  )
+
+```
+
+
+### Write some documentation on the top hits
+
+```{r}
+
+source("utils/annotation_utils.R")
+source("utils/phenoscanner.R")
+
+doc_folder <- "docs"
+phenoscanner_folder <- file.path(doc_folder, "phenoscanner")
+ensembl_folder <- file.path(doc_folder, "ensembl")
+md_file <- file.path(doc_folder, "top_hits.md")
+
+write(
+  x = glue("## Top hits"),
+  file = md_file,
+  append = F
+)
+
+
+write(
+  x = paste0("| SNP | chr | bp | ref | alt | beta | se | p | Ensembl | Phenoscanner |"), 
+  file = md_file, 
+  append = T
+)
+write(
+  x = paste0("| --- | --- | -- | --- | --- | ---- | -- | - | ------- | ------------ |"), 
+  file = md_file, 
+  append = T
+)
+  
+  for (i in 1:nrow(top_hits_table)) {
+    
+    snp <- top_hits_table$snp[i]
+    chr <- top_hits_table$chr[i]
+    bp <- top_hits_table$pos[i]
+    ref <- top_hits_table$a0[i]
+    alt <- top_hits_table$a1[i]
+    beta <- top_hits_table$b[i]
+    se <- top_hits_table$se[i]
+    p <- top_hits_table$p[i]
+    
+    
+    phenoScannerLabel <- getPhenoscannerDocs(
+      variantId = snp,
+      altAllele = NULL,
+      phenoscannerFolder = phenoscanner_folder
+    )
+    
+    if (phenoScannerLabel != "No Results") {
+      
+      phenoScannerLabel <- glue("[{phenoScannerLabel}]({basename(phenoscanner_folder)}/{cleanRsId(snp)}.md)")
+      
+    }
+    
+    geneLabel <- getEnsemblDocs(
+      variantId = snp,
+      chr = chr,
+      bp = bp,
+      ensemblFolder = ensembl_folder
+    )
+    
+    if (geneLabel != "No Results") {
+      
+      geneLabel <- glue("[{geneLabel}]({basename(ensembl_folder)}/{cleanRsId(snp)}.md)")
+      
+    }
+    
+    write(
+      x = glue("| {snp} | {chr} | {bp} | {ref} | {alt} | {beta} | {se} | {p} |{geneLabel} | {phenoScannerLabel} |"), 
+      file = md_file, 
+      append = T
+    )
+    
+    
+  }
+
+
+
+```
+
+
+### MH
+
+```{r}
+
+chromosomes <- c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22")
+chromosomeLength <- c(249250621, 243199373, 198022430, 191154276, 180915260, 171115067, 159138663, 146364022, 141213431, 135534747,	135006516, 133851895, 115169878, 107349540, 102531392, 90354753, 81195210, 78077248, 59128983, 63025520, 48129895, 51304566)
+genomeLength <- sum(chromosomeLength)
+chromosomeStart <- cumsum(chromosomeLength) - chromosomeLength
+chromosomeMiddle <- chromosomeStart + chromosomeLength / 2
+
+mhColor1 <- "grey20"
+mhColor2 <- "grey40"
+
+# Arrange for plotting
+  
+  plotDF <- meta_results %>%
+    mutate(
+      log10p = -log10(p),
+      chromosomeNumber = as.numeric(ifelse(chr == 'X', 23, chr)),
+      x = chromosomeStart[chromosomeNumber] + pos,
+      color = chromosomeNumber %% 2
+    ) %>%
+    arrange(
+      chromosomeNumber, log10p, pos
+    )
+  
+  maxP <- max(plotDF$log10p)
+  
+  colors <- c(mhColor1, mhColor2)
+  
+  if (!is.null(annotationDF) && nrow(annotationDF) > 0) {
+    
+    plotDF$label <- NA
+    
+    plotAnnotationDF <- annotationDF %>% 
+      mutate(
+        chromosomeNumber = as.numeric(ifelse(chr == 'X', 23, chr)),
+        x = chromosomeStart[chromosomeNumber] + bp
+      ) %>% 
+      arrange(
+        x
+      )
+    
+    for (i in 1:nrow(plotAnnotationDF)) {
+      
+      snp <- plotAnnotationDF$snp[i]
+      chr <- plotAnnotationDF$chr[i]
+      bp <- plotAnnotationDF$bp[i]
+      
+      if (is.na(snp)) {
+        
+        stop("NA snp")
+        
+      }
+      
+      plotDF$label[plotDF$id == snp] <- snp
+      plotDF$color[plotDF$id == snp] <- 1 + i
+      
+      plotDF$color[plotDF$chrom == chr & plotDF$genpos >= bp - bpLimit & plotDF$genpos <= bp + bpLimit] <- 1 + i
+      
+    }
+    
+    colors <- c(
+      colors, 
+      scico(
+        n = nrow(annotationDF), 
+        palette = "batlow", 
+        end = 0.8
+      )
+    )
+  }
+  
+  plotDF <- plotDF %>% 
+    mutate(
+      color = factor(color, levels = 0:(length(colors)-1))
+    ) %>% 
+    arrange(
+      color
+    )
+  
+  # Chromosome labels
+  
+  xLabels <- 1:22
+  xLabels[xLabels %% 2 == 0 & xLabels > 17] <- ""
+  # xLabels <- c(xLabels, "X")
+  
+  # y axis
+  
+  maxY <- 5 * ceiling(max(plotDF$log10p / 5))
+  maxY <- max(maxY, 10)
+  
+  yBreaks <- c(0, 5, -log10(5e-8))
+  yLabels <- c("", 5, round(-log10(5e-8), digits = 1))
+  
+  lastBreak <- floor(max(maxY / 10))
+  
+  if (lastBreak > 0) {
+    
+    newBreaks <- 10*(1:lastBreak)
+    
+    while(length(newBreaks) > 3) {
+      
+      newBreaks <- newBreaks[c(T, F)]
+      
+    }
+    
+    yBreaks <- c(yBreaks, newBreaks)
+    yLabels <- c(yLabels, round(newBreaks, digits = 1))
+    
+  }
+  
+  
+  # Build plot
+  mhPlot <- ggplot() + 
+    geom_hline(
+      yintercept = -log10(5e-8), 
+      col = "green4", 
+      linewidth = 0.3
+    ) + 
+    geom_point(
+      data = plotDF,
+      aes(
+        x = x, 
+        y = log10p, 
+        col = color
+      ), 
+      size = 2
+    )
+  
+  if (!is.null(annotationDF) && nrow(annotationDF) > 0 && length(unique(annotationDF$snp)) < 20) {
+    
+    maxY <- maxY + 2
+    
+    annotatedDF <- plotDF %>% 
+      filter(
+        !is.na(label)
+      )
+    
+    mhPlot <- mhPlot +
+      geom_segment(
+        data = annotatedDF,
+        mapping = aes(
+          x = x,
+          xend = x,
+          y = log10p,
+          yend = 1.05 * maxP,
+          col = color
+        ),
+        linetype = "dotted"
+      ) +
+      geom_text_repel(
+        data = annotatedDF,
+        mapping = aes(
+          x = x,
+          y = 1.05 * maxP,
+          label = label,
+          col = color
+        ),
+        direction = "x",
+        hjust = 0,
+        angle = 90,
+        nudge_y = 1
+      )
+    
+  }
+  
+  mhPlot <- mhPlot +
+    scale_y_continuous(
+      name = "p-value [-log10]", 
+      breaks = yBreaks, 
+      labels = yLabels, 
+      expand = expansion(
+        mult = c(0, 0.05)
+      ), 
+      limits = c(0, maxY)
+    ) + 
+    scale_x_continuous(
+      name = "Chromosome", 
+      breaks = chromosomeMiddle, 
+      labels = xLabels, 
+      limits = c(0, genomeLength), 
+      expand = expansion(
+        mult = 0.01
+      )
+    ) + 
+    scale_color_manual(
+      values = colors
+    ) + 
+    theme(
+      legend.position = "none",
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_blank(),
+      panel.grid.major.y = element_line(linewidth = 0.3),
+      strip.background = element_rect(
+        fill = "grey99"
+      )
+    )
+
+```
+
+### Pick the top marker per locus
+
+```{r}
+
+
+
+```
+
+
