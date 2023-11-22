@@ -1,4 +1,5 @@
 ## Top hits
+
 | SNP | chr | bp | ref | beta | se | p | Ensembl | Phenoscanner |
 | --- | --- | -- | --- | -------- | ---- | -- | - | ------- | ------------ |
 | rs56337209 | 3 | 118525324 | G | A | 0.0888 | 0.0157 | 1.69e-08 |[IGSF11](ensembl/rs56337209.md) | No Results |
