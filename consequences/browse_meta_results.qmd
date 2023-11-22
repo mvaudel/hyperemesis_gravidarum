@@ -14,6 +14,8 @@ library(conflicted)
 library(janitor)
 library(glue)
 library(tidyverse)
+library(curl)
+library(httr)
 library(rjson)
 library(ggplot2)
 library(scico)
@@ -94,12 +96,12 @@ write(
 
 
 write(
-  x = paste0("| SNP | chr | bp | ref | beta | se | p | Ensembl | Phenoscanner |"), 
+  x = paste0("| SNP | chr | bp | ref | alt | beta | se | p | Ensembl | Phenoscanner |"), 
   file = md_file, 
   append = T
 )
 write(
-  x = paste0("| --- | --- | -- | --- | -------- | ---- | -- | - | ------- | ------------ |"), 
+  x = paste0("| --- | --- | -- | --- | --- | ---- | -- | - | ------- | ------------ |"), 
   file = md_file, 
   append = T
 )
