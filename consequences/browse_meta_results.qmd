@@ -18,6 +18,7 @@ library(curl)
 library(httr)
 library(rjson)
 library(ggplot2)
+library(ggrepel)
 library(scico)
 library(ggside)
 
@@ -26,6 +27,8 @@ conflicts_prefer(dplyr::filter)
 
 # General parameters
 theme_set(theme_bw(base_size = 14))
+
+bpLimit <- 500000
 
 ```
 
@@ -40,6 +43,7 @@ meta_results <- read.table(
 ) %>% 
   clean_names()
 
+
 ```
 
 
@@ -47,7 +51,7 @@ meta_results <- read.table(
 
 ```{r}
 
-bpLimit <- 100000
+if (F) { # Enable to prune by p-value
 
 top_hits <- c()
 temp_table <- meta_results %>% 
@@ -72,6 +76,22 @@ top_hits_table <- meta_results %>%
   filter(
     snp %in% top_hits
   )
+
+} else {
+  
+  
+top_hits_table <- read.table(
+  file = "utils/top_hits",
+  header = T,
+  sep = " "
+) %>% 
+  clean_names() %>% 
+  left_join(
+    meta_results,
+    by = "snp"
+  )
+  
+}
 
 ```
 
@@ -183,6 +203,8 @@ mhColor2 <- "grey40"
       chromosomeNumber, log10p, pos
     )
   
+  annotationDF <- top_hits_table
+  
   maxP <- max(plotDF$log10p)
   
   colors <- c(mhColor1, mhColor2)
@@ -193,8 +215,9 @@ mhColor2 <- "grey40"
     
     plotAnnotationDF <- annotationDF %>% 
       mutate(
+      log10p = -log10(p),
         chromosomeNumber = as.numeric(ifelse(chr == 'X', 23, chr)),
-        x = chromosomeStart[chromosomeNumber] + bp
+        x = chromosomeStart[chromosomeNumber] + pos
       ) %>% 
       arrange(
         x
@@ -203,8 +226,9 @@ mhColor2 <- "grey40"
     for (i in 1:nrow(plotAnnotationDF)) {
       
       snp <- plotAnnotationDF$snp[i]
+      locus_name <- plotAnnotationDF$locus_name[i]
       chr <- plotAnnotationDF$chr[i]
-      bp <- plotAnnotationDF$bp[i]
+      bp <- plotAnnotationDF$pos[i]
       
       if (is.na(snp)) {
         
@@ -212,10 +236,10 @@ mhColor2 <- "grey40"
         
       }
       
-      plotDF$label[plotDF$id == snp] <- snp
-      plotDF$color[plotDF$id == snp] <- 1 + i
+      plotDF$label[plotDF$snp == snp] <- locus_name
+      plotDF$color[plotDF$snp == snp] <- 1 + i
       
-      plotDF$color[plotDF$chrom == chr & plotDF$genpos >= bp - bpLimit & plotDF$genpos <= bp + bpLimit] <- 1 + i
+      plotDF$color[plotDF$chr == chr & plotDF$pos >= bp - bpLimit & plotDF$pos <= bp + bpLimit] <- 1 + i
       
     }
     
@@ -288,11 +312,14 @@ mhColor2 <- "grey40"
   
   if (!is.null(annotationDF) && nrow(annotationDF) > 0 && length(unique(annotationDF$snp)) < 20) {
     
-    maxY <- maxY + 2
+    maxY <- maxY + 20
     
     annotatedDF <- plotDF %>% 
       filter(
         !is.na(label)
+      ) %>% 
+      mutate(
+        labelY = 20 + 40 * ((log10p - 7) / (60 - 7))
       )
     
     mhPlot <- mhPlot +
@@ -302,7 +329,7 @@ mhColor2 <- "grey40"
           x = x,
           xend = x,
           y = log10p,
-          yend = 1.05 * maxP,
+          yend = labelY,
           col = color
         ),
         linetype = "dotted"
@@ -311,12 +338,13 @@ mhColor2 <- "grey40"
         data = annotatedDF,
         mapping = aes(
           x = x,
-          y = 1.05 * maxP,
+          y = labelY,
           label = label,
           col = color
         ),
         direction = "x",
         hjust = 0,
+        vjust = 0.5,
         angle = 90,
         nudge_y = 1
       )
@@ -354,15 +382,11 @@ mhColor2 <- "grey40"
         fill = "grey99"
       )
     )
+  
+  mhPlot
 
 ```
 
-### Pick the top marker per locus
 
-```{r}
-
-
-
-```
 
 

@@ -1,26 +1,34 @@
 # Parameters for the pipeline.
 
 variants:
-  - rs1441062
-  - rs143409503
-  - rs4754750
-  - rs4707680
-  - rs35673587
-  - rs45543339
-  - rs16982345
-  - rs57452279
-  - rs201838815
+  - rs56337209
+  - rs9312688
+  - rs10073299
+  - rs10948901
+  - rs184084750
+  - rs76856932
+  - rs12790159
+  - rs7948940
+  - rs7101406
+  - rs17077610
+  - rs1058587
+  - rs5994661
+
 
 loci:
-  - IGFBP7 MoBa
-  - IGFBP7 NatComm
-  - TRPC6 MoBa
-  - TRPC6 NatComm
-  - GDF15 MoBa
-  - GDF15 MoBa
-  - GDF15 NatComm
-  - UPB1 MoBa
-  - UPB1 NatComm
+  - LSAMP-IGSF11
+  - IGFBP7-ADGRL3
+  - CDH9
+  - GFRAL
+  - MURC
+  - CYLC2-SMC2
+  - TCF7L2-HABP2
+  - PGR-TRPC6
+  - KCNA4-FSHB
+  - SLITRK1-SLITRK6
+  - GDF15
+  - SYN3
+
 
 gwas_version: 23-07-21
 

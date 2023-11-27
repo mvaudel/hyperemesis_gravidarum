@@ -5,7 +5,6 @@
 | rs9312688 | 4 | 57486707 | G | A | 0.1569 | 0.0162 | 4.09e-22 |[THEGL](ensembl/rs9312688.md) | No Results |
 | rs10073299 | 5 | 27647394 | C | T | 2.1933 | 0.4006 | 4.37e-08 |[[...]](ensembl/rs10073299.md) | No Results |
 | rs10948901 | 6 | 55324684 | C | T | 0.0972 | 0.0157 | 5.59e-10 |[HMGCLL1](ensembl/rs10948901.md) | [Getting up in morning, Morning or evening person](phenoscanner/rs10948901.md) |
-| rs10948897 | 6 | 55224384 | G | A | -0.0877 | 0.0155 | 1.72e-08 |[GFRAL](ensembl/rs10948897.md) | No Results |
 | rs184084750 | 9 | 103363979 | C | T | 0.9027 | 0.1633 | 3.26e-08 |[MURC](ensembl/rs184084750.md) | No Results |
 | rs76856932 | 10 | 113347748 | C | A | 0.3236 | 0.0581 | 2.48e-08 |[RP11-309P22.1](ensembl/rs76856932.md) | No Results |
 | rs12790159 | 11 | 101338299 | C | T | 0.2072 | 0.0231 | 3.47e-19 |[TRPC6](ensembl/rs12790159.md) | No Results |
