@@ -92,7 +92,7 @@ for (variant in unique(look_up_data$id)) {
 
 ```{r}
 
-get_forest_plot = function(
+get_forest_plot_wlm = function(
   data,
   phenotype_name
 ) {
@@ -102,7 +102,7 @@ get_forest_plot = function(
   
   analysis_data = data %>% 
     filter(
-      phenotype == phenotype_name
+      phenotype == phenotype_name & statistics == "WLM"
     ) %>% 
     arrange(
       chr, pos
@@ -110,8 +110,7 @@ get_forest_plot = function(
     mutate(
       variant_factor = factor(id, levels = variants),
       population_factor = factor(population, levels = rev(c("children", "mothers", "fathers"))),
-      statistics_factor = factor(statistics, levels = rev(c("GWAS", "WLM"))),
-      y = as.numeric(variant_factor) + 0.15 * (as.numeric(population_factor) - 2) + 0.05 * (as.numeric(statistics_factor) - 1.5)
+      y = as.numeric(variant_factor) + 0.15 * (as.numeric(population_factor) - 2)
     )
   
   levels(analysis_data$population_factor) = rev(c("Child", "Mother", "Father"))
@@ -147,8 +146,7 @@ get_forest_plot = function(
       mapping = aes(
         x = beta,
         y = y,
-        col = population_factor,
-        shape = statistics_factor
+        col = population_factor
       ),
       size = 3
     ) +
@@ -166,11 +164,80 @@ get_forest_plot = function(
     guides(
       colour = guide_legend(
         reverse = T
-        ),
-      shape = guide_legend(
-        reverse = T
         )
       ) +
+    theme(
+      axis.title.y = element_blank(),
+      panel.border = element_blank(),
+      panel.grid.major.y = element_blank(),
+      panel.grid.minor.y = element_blank(),
+      legend.title = element_blank()
+    )
+  
+  return(plot)
+  
+}
+
+get_forest_plot_mother = function(
+  data,
+  phenotype_name
+) {
+  
+  variants = sort(unique(data$id))
+  names = paste0(loci[variants], " (", variants, ")")
+  
+  analysis_data = data %>% 
+    filter(
+      phenotype == phenotype_name & statistics == "GWAS" & population == "mothers"
+    ) %>% 
+    arrange(
+      chr, pos
+    ) %>% 
+    mutate(
+      variant_factor = factor(id, levels = variants),
+      y = as.numeric(variant_factor)
+    )
+  
+  plot = ggplot() +
+    geom_vline(
+      xintercept = 0
+    ) +
+    geom_segment(
+      data = analysis_data,
+      mapping = aes(
+        x = beta - qnorm(0.975) * se,
+        xend = beta + qnorm(0.975) * se,
+        y = y,
+        yend = y
+      ),
+      linewidth = 0.5
+    ) +
+    geom_segment(
+      data = analysis_data,
+      mapping = aes(
+        x = beta - se,
+        xend = beta + se,
+        y = y,
+        yend = y
+      ),
+      linewidth = 0.8
+    ) +
+    geom_point(
+      data = analysis_data,
+      mapping = aes(
+        x = beta,
+        y = y
+      ),
+      size = 3
+    ) +
+    scale_x_continuous(
+      name = "beta [95% CI]"
+    ) +
+    scale_y_continuous(
+      breaks = 1:length(variants),
+      labels = names,
+      limits = c(0.5, length(variants) + 0.5)
+    ) +
     theme(
       axis.title.y = element_blank(),
       panel.border = element_blank(),
@@ -197,13 +264,27 @@ if (!dir.exists("plots")) {
 
 for (phenotype in unique(look_up_data$phenotype)) {
   
-  plot = get_forest_plot(
+  plot = get_forest_plot_wlm(
     data = look_up_data,
     phenotype_name = phenotype
   )
   
   agg_png(
-    filename = glue("plots/{make_clean_names(phenotype)}_forest.png"),
+    filename = glue("plots/{make_clean_names(phenotype)}_forest_wlm.png"),
+    height = 600,
+    width = 900,
+    scaling = 1.5
+  )
+  grid.draw(plot)
+  device = dev.off()
+  
+  plot = get_forest_plot_mother(
+    data = look_up_data,
+    phenotype_name = phenotype
+  )
+  
+  agg_png(
+    filename = glue("plots/{make_clean_names(phenotype)}_forest_mother.png"),
     height = 600,
     width = 900,
     scaling = 1.5
@@ -343,8 +424,8 @@ time_plot = ggplot() +
 
 ```{r}
 
-variants_to_plot = c("rs1441062", "rs4754750", "rs45543339", "rs57452279")
-loci_to_plot = c("IGFBP7", "TRPC6", "GDF15", "UPB1")
+variants_to_plot = config$variants[config$variants %in% look_up_data$id]
+loci_to_plot = config$loci[config$variants %in% look_up_data$id]
 
 
 nvp_others_time_plot = look_up_data %>% 
@@ -419,8 +500,8 @@ time_plot_mothers = ggplot() +
     values = scico(
       n = length(variants_to_plot),
       palette = "batlow",
-      begin = 0.3,
-      end = 0.7
+      begin = 0.2,
+      end = 0.8
     ),
     labels = loci_to_plot
   ) +
