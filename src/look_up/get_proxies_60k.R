@@ -206,6 +206,9 @@ ids_alleles <- meta_results_top_hits %>%
   mutate(
     id = ifelse(is.na(proxy), snp, proxy),
     allele = ifelse(is.na(proxy), a1, proxy_a1)
+  ) %>% 
+  select(
+    id, allele
   )
 
 write.table(
