@@ -43,6 +43,12 @@ meta_results <- read.table(
 ) %>% 
   clean_names()
 
+moba_results <- read.table(
+  file = "/mnt/work/marc/moba/hyperemesis_gravidarum/23-07-21/results/nausea_vomiting/step2_pop_mothers_pheno_nausea_vomiting.regenie.gz",
+  header = T,
+  sep = " "
+) %>% 
+  clean_names()
 
 ```
 
@@ -191,202 +197,218 @@ mhColor1 <- "grey20"
 mhColor2 <- "grey40"
 
 # Arrange for plotting
+
+plotDF <- meta_results %>%
+  mutate(
+    log10p = -log10(p),
+    chromosomeNumber = as.numeric(ifelse(chr == 'X', 23, chr)),
+    x = chromosomeStart[chromosomeNumber] + pos,
+    color = chromosomeNumber %% 2
+  ) %>%
+  arrange(
+    chromosomeNumber, log10p, pos
+  )
+
+annotationDF <- top_hits_table
+
+maxP <- max(plotDF$log10p)
+
+colors <- c(mhColor1, mhColor2)
+
+if (!is.null(annotationDF) && nrow(annotationDF) > 0) {
   
-  plotDF <- meta_results %>%
+  plotDF$label <- NA
+  
+  plotAnnotationDF <- annotationDF %>% 
     mutate(
       log10p = -log10(p),
       chromosomeNumber = as.numeric(ifelse(chr == 'X', 23, chr)),
-      x = chromosomeStart[chromosomeNumber] + pos,
-      color = chromosomeNumber %% 2
-    ) %>%
-    arrange(
-      chromosomeNumber, log10p, pos
-    )
-  
-  annotationDF <- top_hits_table
-  
-  maxP <- max(plotDF$log10p)
-  
-  colors <- c(mhColor1, mhColor2)
-  
-  if (!is.null(annotationDF) && nrow(annotationDF) > 0) {
-    
-    plotDF$label <- NA
-    
-    plotAnnotationDF <- annotationDF %>% 
-      mutate(
-      log10p = -log10(p),
-        chromosomeNumber = as.numeric(ifelse(chr == 'X', 23, chr)),
-        x = chromosomeStart[chromosomeNumber] + pos
-      ) %>% 
-      arrange(
-        x
-      )
-    
-    for (i in 1:nrow(plotAnnotationDF)) {
-      
-      snp <- plotAnnotationDF$snp[i]
-      locus_name <- plotAnnotationDF$locus_name[i]
-      chr <- plotAnnotationDF$chr[i]
-      bp <- plotAnnotationDF$pos[i]
-      
-      if (is.na(snp)) {
-        
-        stop("NA snp")
-        
-      }
-      
-      plotDF$label[plotDF$snp == snp] <- locus_name
-      plotDF$color[plotDF$snp == snp] <- 1 + i
-      
-      plotDF$color[plotDF$chr == chr & plotDF$pos >= bp - bpLimit & plotDF$pos <= bp + bpLimit] <- 1 + i
-      
-    }
-    
-    colors <- c(
-      colors, 
-      scico(
-        n = nrow(annotationDF), 
-        palette = "batlow", 
-        end = 0.8
-      )
-    )
-  }
-  
-  plotDF <- plotDF %>% 
-    mutate(
-      color = factor(color, levels = 0:(length(colors)-1))
+      x = chromosomeStart[chromosomeNumber] + pos
     ) %>% 
     arrange(
-      color
+      x
     )
   
-  # Chromosome labels
-  
-  xLabels <- 1:22
-  xLabels[xLabels %% 2 == 0 & xLabels > 17] <- ""
-  # xLabels <- c(xLabels, "X")
-  
-  # y axis
-  
-  maxY <- 5 * ceiling(max(plotDF$log10p / 5))
-  maxY <- max(maxY, 10)
-  
-  yBreaks <- c(0, 5, -log10(5e-8))
-  yLabels <- c("", 5, round(-log10(5e-8), digits = 1))
-  
-  lastBreak <- floor(max(maxY / 10))
-  
-  if (lastBreak > 0) {
+  for (i in 1:nrow(plotAnnotationDF)) {
     
-    newBreaks <- 10*(1:lastBreak)
+    snp <- plotAnnotationDF$snp[i]
+    locus_name <- plotAnnotationDF$locus_name[i]
+    chr <- plotAnnotationDF$chr[i]
+    bp <- plotAnnotationDF$pos[i]
     
-    while(length(newBreaks) > 3) {
+    if (is.na(snp)) {
       
-      newBreaks <- newBreaks[c(T, F)]
+      stop("NA snp")
       
     }
     
-    yBreaks <- c(yBreaks, newBreaks)
-    yLabels <- c(yLabels, round(newBreaks, digits = 1))
+    plotDF$label[plotDF$snp == snp] <- locus_name
+    plotDF$color[plotDF$snp == snp] <- 1 + i
+    
+    plotDF$color[plotDF$chr == chr & plotDF$pos >= bp - bpLimit & plotDF$pos <= bp + bpLimit] <- 1 + i
     
   }
   
-  
-  # Build plot
-  mhPlot <- ggplot() + 
-    geom_hline(
-      yintercept = -log10(5e-8), 
-      col = "green4", 
-      linewidth = 0.3
-    ) + 
-    geom_point(
-      data = plotDF,
-      aes(
-        x = x, 
-        y = log10p, 
-        col = color
-      ), 
-      size = 2
+  colors <- c(
+    colors, 
+    scico(
+      n = nrow(annotationDF), 
+      palette = "batlow", 
+      end = 0.8
     )
+  )
+}
+
+plotDF <- plotDF %>% 
+  mutate(
+    color = factor(color, levels = 0:(length(colors)-1))
+  ) %>% 
+  arrange(
+    color
+  )
+
+# Chromosome labels
+
+xLabels <- 1:22
+xLabels[xLabels %% 2 == 0 & xLabels > 17] <- ""
+# xLabels <- c(xLabels, "X")
+
+# y axis
+
+maxY <- 5 * ceiling(max(plotDF$log10p / 5))
+maxY <- max(maxY, 10)
+
+yBreaks <- c(0, 5, -log10(5e-8))
+yLabels <- c("", 5, round(-log10(5e-8), digits = 1))
+
+lastBreak <- floor(max(maxY / 10))
+
+if (lastBreak > 0) {
   
-  if (!is.null(annotationDF) && nrow(annotationDF) > 0 && length(unique(annotationDF$snp)) < 20) {
+  newBreaks <- 10*(1:lastBreak)
+  
+  while(length(newBreaks) > 3) {
     
-    maxY <- maxY + 20
-    
-    annotatedDF <- plotDF %>% 
-      filter(
-        !is.na(label)
-      ) %>% 
-      mutate(
-        labelY = 20 + 40 * ((log10p - 7) / (60 - 7))
-      )
-    
-    mhPlot <- mhPlot +
-      geom_segment(
-        data = annotatedDF,
-        mapping = aes(
-          x = x,
-          xend = x,
-          y = log10p,
-          yend = labelY,
-          col = color
-        ),
-        linetype = "dotted"
-      ) +
-      geom_text_repel(
-        data = annotatedDF,
-        mapping = aes(
-          x = x,
-          y = labelY,
-          label = label,
-          col = color
-        ),
-        direction = "x",
-        hjust = 0,
-        vjust = 0.5,
-        angle = 90,
-        nudge_y = 1
-      )
+    newBreaks <- newBreaks[c(T, F)]
     
   }
+  
+  yBreaks <- c(yBreaks, newBreaks)
+  yLabels <- c(yLabels, round(newBreaks, digits = 1))
+  
+}
+
+
+# Build plot
+mhPlot <- ggplot() + 
+  geom_hline(
+    yintercept = -log10(5e-8), 
+    col = "green4", 
+    linewidth = 0.3
+  ) + 
+  geom_point(
+    data = plotDF,
+    aes(
+      x = x, 
+      y = log10p, 
+      col = color
+    ), 
+    size = 2
+  )
+
+if (!is.null(annotationDF) && nrow(annotationDF) > 0 && length(unique(annotationDF$snp)) < 20) {
+  
+  maxY <- maxY + 20
+  
+  annotatedDF <- plotDF %>% 
+    filter(
+      !is.na(label)
+    ) %>% 
+    mutate(
+      labelY = 20 + 40 * ((log10p - 7) / (60 - 7))
+    )
   
   mhPlot <- mhPlot +
-    scale_y_continuous(
-      name = "p-value [-log10]", 
-      breaks = yBreaks, 
-      labels = yLabels, 
-      expand = expansion(
-        mult = c(0, 0.05)
-      ), 
-      limits = c(0, maxY)
-    ) + 
-    scale_x_continuous(
-      name = "Chromosome", 
-      breaks = chromosomeMiddle, 
-      labels = xLabels, 
-      limits = c(0, genomeLength), 
-      expand = expansion(
-        mult = 0.01
-      )
-    ) + 
-    scale_color_manual(
-      values = colors
-    ) + 
-    theme(
-      legend.position = "none",
-      panel.grid.minor = element_blank(),
-      panel.grid.major.x = element_blank(),
-      panel.grid.major.y = element_line(linewidth = 0.3),
-      strip.background = element_rect(
-        fill = "grey99"
-      )
+    geom_segment(
+      data = annotatedDF,
+      mapping = aes(
+        x = x,
+        xend = x,
+        y = log10p,
+        yend = labelY,
+        col = color
+      ),
+      linetype = "dotted"
+    ) +
+    geom_text_repel(
+      data = annotatedDF,
+      mapping = aes(
+        x = x,
+        y = labelY,
+        label = label,
+        col = color
+      ),
+      direction = "x",
+      hjust = 0,
+      vjust = 0.5,
+      angle = 90,
+      nudge_y = 1
     )
   
-  mhPlot
+}
+
+mhPlot <- mhPlot +
+  scale_y_continuous(
+    name = "p-value [-log10]", 
+    breaks = yBreaks, 
+    labels = yLabels, 
+    expand = expansion(
+      mult = c(0, 0.05)
+    ), 
+    limits = c(0, maxY)
+  ) + 
+  scale_x_continuous(
+    name = "Chromosome", 
+    breaks = chromosomeMiddle, 
+    labels = xLabels, 
+    limits = c(0, genomeLength), 
+    expand = expansion(
+      mult = 0.01
+    )
+  ) + 
+  scale_color_manual(
+    values = colors
+  ) + 
+  theme(
+    legend.position = "none",
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_line(linewidth = 0.3),
+    strip.background = element_rect(
+      fill = "grey99"
+    )
+  )
+
+mhPlot
 
 ```
 
+
+### Find proxies
+
+```{r}
+
+top_hits_table$proxy <- NA
+top_hits_table$proxy_a1 <- NA
+top_hits_table$proxy_a0 <- NA
+
+for (original_snp in 1:nrow(top_hits_table)) {
+  
+  
+  
+}
+
+```
 
 
 
