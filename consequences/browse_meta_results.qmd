@@ -394,21 +394,4 @@ mhPlot
 ```
 
 
-### Find proxies
-
-```{r}
-
-top_hits_table$proxy <- NA
-top_hits_table$proxy_a1 <- NA
-top_hits_table$proxy_a0 <- NA
-
-for (original_snp in 1:nrow(top_hits_table)) {
-  
-  
-  
-}
-
-```
-
-
 
