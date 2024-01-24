@@ -112,18 +112,18 @@ get_forest_plot_wlm = function(
   
   analysis_data = data %>% 
     filter(
-      phenotype == phenotype_name & statistics == "WLM"
+      phenotype == phenotype_name & statistics == "WLM" & population %in% c("children", "mothers")
     ) %>% 
     arrange(
       chr, pos
     ) %>% 
     mutate(
       variant_factor = factor(id, levels = variants),
-      population_factor = factor(population, levels = rev(c("children", "mothers", "fathers"))),
+      population_factor = factor(population, levels = rev(c("children", "mothers"))),
       y = as.numeric(variant_factor) + 0.15 * (as.numeric(population_factor) - 2)
     )
   
-  levels(analysis_data$population_factor) = rev(c("Child", "Mother", "Father"))
+  levels(analysis_data$population_factor) = rev(c("Child", "Mother"))
   
   plot = ggplot() +
     geom_vline(
@@ -528,16 +528,19 @@ time_plot_mothers = ggplot() +
       ) +
   theme(
     legend.title = element_blank(),
-    legend.position = "top",
+    legend.position = "none",
     legend.box = "vertical",
     panel.border = element_blank(),
     panel.grid.major.x = element_blank(),
     panel.grid.minor.x = element_blank()
+  ) +
+  facet_grid(
+    id_factor ~ .
   )
   
   agg_png(
     filename = glue("plots/nvp_time_mothers.png"),
-    height = 600,
+    height = 8 * 600,
     width = 900,
     scaling = 1.5
   )
@@ -545,4 +548,24 @@ time_plot_mothers = ggplot() +
   device = dev.off()
   
   time_plot_mothers
+```
+
+### All variants, mothers only
+
+```{r}
+
+table_marlena <- look_up_data %>% 
+  select(
+    chr, pos, allele0, allele1, a1freq, id, locus, phenotype, population, statistics, n, beta, se, log10p
+  )
+
+write.table(
+  table_marlena,
+  file = "resources/table_marlena_23.12.19",
+  col.names = T,
+  row.names = F,
+  sep = "\t",
+  quote = F
+)
+
 ```
