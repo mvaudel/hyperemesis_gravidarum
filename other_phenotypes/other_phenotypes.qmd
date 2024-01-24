@@ -1,0 +1,14 @@
+---
+title: "other_phenotypes"
+format: gfm
+editor: visual
+---
+
+## Link to other phenotypes
+
+Study of the association of markers with other phenotypes.
+
+```{r}
+
+
+```

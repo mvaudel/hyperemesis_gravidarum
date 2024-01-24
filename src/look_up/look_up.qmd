@@ -57,6 +57,16 @@ look_up_data = read.table(
 
 look_up_data$locus = loci[look_up_data$id]
 
+look_up_ids <- unique(look_up_data$id)
+
+write.table(
+  look_up_ids,
+  file = "resources/look_up_ids_23-07-21",
+  col.names = F,
+  row.names = F,
+  quote = F
+)
+
 ```
 
 ### Swap alleles

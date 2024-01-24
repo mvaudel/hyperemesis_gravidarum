@@ -52,7 +52,6 @@ moba_results <- read.table(
 
 ```
 
-
 ### Select top hits
 
 ```{r}
@@ -100,7 +99,6 @@ top_hits_table <- read.table(
 }
 
 ```
-
 
 ### Write some documentation on the top hits
 
@@ -181,7 +179,6 @@ write(
 
 
 ```
-
 
 ### MH
 
@@ -392,8 +389,3 @@ mhPlot <- mhPlot +
 mhPlot
 
 ```
-
-
-
-
-
