@@ -4,11 +4,381 @@ format: gfm
 editor: visual
 ---
 
-## Link to other phenotypes
+## Association to other phenotypes
 
 Study of the association of markers with other phenotypes.
 
 ```{r}
 
+library(conflicted)
+library(janitor)
+library(glue)
+library(tidyverse)
+library(gamlss.data)
+library(gamlss.dist)
+library(gamlss)
+library(ggplot2)
+library(gghalves)
+library(scico)
+library(ggside)
+library(parallel) 
+
+# Solve name space conflicts
+conflicts_prefer(dplyr::filter)
+conflicts_prefer(dplyr::select)
+
+# General parameters
+theme_set(theme_bw(base_size = 14))
+
+
+# Standardization fuctions
+source("standardization_functions.R")
+```
+
+Load phenotypes
+
+```{r}
+
+unrelated_mothers <- read.table(
+  file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_23-05-28/id/mothers_id_unrelated",
+  header = T,
+  sep = "\t"
+)
+
+unrelated_children <- read.table(
+  file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_23-05-28/id/children_id_unrelated",
+  header = T,
+  sep = "\t"
+)
+
+pregnancy_data <- read.table(
+  file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_24-01-16/pregnancy.gz",
+  header = T,
+  sep = "\t"
+) %>% 
+  filter(
+    !is.na(child_sentrix_id) | !is.na(mother_sentrix_id)
+  )
+
+mfr_data <- read.table(
+  file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_24-01-16/mfr.gz",
+  header = T,
+  sep = "\t"
+) %>% 
+  filter(
+    !is.na(child_sentrix_id) | !is.na(mother_sentrix_id)
+  )
 
 ```
+
+Process values
+
+```{r}
+
+nvp_data <- pregnancy_data %>% 
+  mutate(
+    hospitalized_prolonged_nausea_vomiting = ifelse(is.na(hospitalized_prolonged_nausea_vomiting), 0, 1),
+    hospitalized_prolonged_nausea_vomiting_0_4w = ifelse(is.na(hospitalized_prolonged_nausea_vomiting_0_4w), 0, 1),
+    hospitalized_prolonged_nausea_vomiting_5_8w = ifelse(is.na(hospitalized_prolonged_nausea_vomiting_5_8w), 0, 1),
+    hospitalized_prolonged_nausea_vomiting_9_12w = ifelse(is.na(hospitalized_prolonged_nausea_vomiting_9_12w), 0, 1),
+    hospitalized_prolonged_nausea_vomiting_13_16w = ifelse(is.na(hospitalized_prolonged_nausea_vomiting_13_16w), 0, 1),
+    hospitalized_prolonged_nausea_vomiting_17_20w = ifelse(is.na(hospitalized_prolonged_nausea_vomiting_17_20w), 0, 1),
+    hospitalized_prolonged_nausea_vomiting_21_24w = ifelse(is.na(hospitalized_prolonged_nausea_vomiting_21_24w), 0, 1),
+    hospitalized_prolonged_nausea_vomiting_25_28w = ifelse(is.na(hospitalized_prolonged_nausea_vomiting_25_28w), 0, 1),
+    hospitalized_prolonged_nausea_vomiting_after_29w = ifelse(is.na(hospitalized_prolonged_nausea_vomiting_after_29w), 0, 1)
+  ) %>% 
+  mutate(
+    nausea_q2 = ifelse(!is.na(nausea_q2) & nausea_q2 == "Yes", 1, 0),
+    vomiting_q2 = ifelse(!is.na(vomiting_q2) & vomiting_q2 == "Yes", 1, 0),
+    nausea_any = ifelse(nausea_q2 == 1 | !is.na(nausea_before_4w) | !is.na(nausea_5w_8w) | !is.na(nausea_9w_12w) | !is.na(nausea_13w_15w) | !is.na(nausea_13w_16w) | !is.na(nausea_17w_20w) | !is.na(nausea_21w_24w) | !is.na(nausea_25w_28w) | !is.na(nausea_after_29w), 1, 0),
+    vomiting_any = ifelse(vomiting_q2 == 1 | !is.na(vomiting_before_4w) | !is.na(vomiting_5w_8w) | !is.na(vomiting_9w_12w) | !is.na(vomiting_13w_15w), 1, 0),
+    long_term_nausea_vomiting_any = ifelse(!is.na(long_term_nausea_vomiting_13w_16w) | !is.na(long_term_nausea_vomiting_17w_20w) | !is.na(long_term_nausea_vomiting_21w_24w) | !is.na(long_term_nausea_vomiting_25w_28w) | !is.na(long_term_nausea_vomiting_after_29w), 1, 0),
+    nausea_vomiting = ifelse(nausea_any == 0 & vomiting_any == 0 & long_term_nausea_vomiting_any == 0, 0, 1),
+    nausea_vomiting_hg = hospitalized_prolonged_nausea_vomiting + nausea_vomiting,
+    nausea_duration = ifelse(is.na(nausea_week_most_bothered_from_q2) | is.na(nausea_week_most_bothered_to_q2), NA, nausea_week_most_bothered_to_q2 - nausea_week_most_bothered_from_q2),
+    vomiting_duration = ifelse(is.na(vomiting_week_from_q2) | is.na(vomiting_week_to_q2), NA, vomiting_week_to_q2 - vomiting_week_from_q2),
+    nausea_week_most_bothered_from_q2 = ifelse(!is.na(nausea_duration) & nausea_duration < 0, NA, nausea_week_most_bothered_from_q2),
+    nausea_week_most_bothered_to_q2 = ifelse(!is.na(nausea_duration) & nausea_duration < 0, NA, nausea_week_most_bothered_to_q2),
+    nausea_duration = ifelse(!is.na(nausea_duration) & nausea_duration < 0, NA, nausea_duration),
+    vomiting_week_from_q2 = ifelse(!is.na(vomiting_duration) & vomiting_duration < 0, NA, vomiting_week_from_q2),
+    vomiting_week_to_q2 = ifelse(!is.na(vomiting_duration) & vomiting_duration < 0, NA, vomiting_week_to_q2),
+    vomiting_duration = ifelse(!is.na(vomiting_duration) & vomiting_duration < 0, NA, vomiting_duration),
+    hospitalized_pre_eclampsia = ifelse(!is.na(hospitalized_pre_eclampsia), 1, 0)
+  ) %>% 
+  select(
+    child_sentrix_id, mother_sentrix_id, pregnancy_duration_term, sex, hospitalized_pre_eclampsia, nausea_vomiting, nausea_vomiting_hg, nausea_duration, vomiting_duration
+  )
+
+birth_data <- mfr_data %>% 
+  mutate(
+    placental_weight = ifelse(placental_weight < 500 | placental_weight > 1000, NA, placental_weight),
+    n_previous_stillbirths = ifelse(n_previous_stillbirths == "2 or more", 2, as.numeric(n_previous_stillbirths)),
+    n_previous_live_births = ifelse(n_previous_live_births == "4 or more", 4, as.numeric(n_previous_live_births)),
+    previous_miscarriages_before_12w = ifelse(previous_miscarriages_before_12w == "4 or more", 4, as.numeric(previous_miscarriages_before_12w)),
+    previous_miscarriages_12_23w = ifelse(previous_miscarriages_12_23w == "4 or more", 4, as.numeric(previous_miscarriages_12_23w)),
+    previous_miscarriages = previous_miscarriages_before_12w + previous_miscarriages_12_23w,
+    abruptio_placentae = ifelse(!is.na(abruptio_placentae), 1, 0),
+    placenta_previa = ifelse(!is.na(placenta_previa), 1, 0),
+    perinatal_death = ifelse(!is.na(perinatal_death), 1, 0),
+    spontaneous_delivery = ifelse(initiation == "Spontaneous", 1, 0)
+  ) %>% 
+  select(
+    child_sentrix_id, mother_sentrix_id, pregnancy_duration, n_previous_stillbirths, n_previous_live_births, previous_miscarriages_before_12w, previous_miscarriages_12_23w, previous_miscarriages, abruptio_placentae, placenta_previa, placental_weight, weight_birth, length_birth, hc_birth, perinatal_death, spontaneous_delivery
+  )
+
+pheno_data_mother <- nvp_data %>% 
+  filter(
+    !is.na(mother_sentrix_id) & mother_sentrix_id %in% unrelated_mothers$sentrix_id
+  ) %>% 
+  left_join(
+    birth_data %>% 
+  filter(
+    !is.na(mother_sentrix_id) & mother_sentrix_id %in% unrelated_mothers$sentrix_id
+  ) %>% 
+    select(
+      -child_sentrix_id
+    ),
+  by = "mother_sentrix_id"
+  )
+
+pheno_data_child <- nvp_data %>% 
+  filter(
+    !is.na(child_sentrix_id) & child_sentrix_id %in% unrelated_children$sentrix_id
+  ) %>% 
+  left_join(
+    birth_data %>% 
+  filter(
+    !is.na(child_sentrix_id) & child_sentrix_id %in% unrelated_children$sentrix_id
+  ) %>% 
+    select(
+      -mother_sentrix_id
+    ),
+  by = "child_sentrix_id"
+  )
+
+
+```
+
+Standardize anthropometric values
+
+```{r}
+
+phenotypes <- c("placental_weight", "weight_birth")
+
+dependentPhenoName <- "pregnancy_duration"
+
+pheno_data_child$dummy <- 0
+
+for (phenotype in phenotypes) {
+  
+  print(paste0(Sys.time(), "    Standardizing ", phenotype))
+  
+  z_phenotype <- paste0("z_duration_", phenotype)
+  
+  sigmaFormula <- paste0(" ~ fp(", dependentPhenoName, ")")
+  sigmaFormulaLinear <- paste0(" ~ ", dependentPhenoName)
+  
+  formula <- paste0(phenotype, sigmaFormula)
+  formulaLinear <- paste0(phenotype, sigmaFormulaLinear)
+  
+  family <- BCT
+  
+  zDF <- standardizeBySex(
+    trainingPhenoDF = pheno_data_child,
+    phenoDF = pheno_data_child,
+    id = "child_sentrix_id",
+    x = dependentPhenoName,
+    y = phenotype,
+    zY = z_phenotype,
+        formula = as.formula(formula),
+        sigmaFormula = as.formula(sigmaFormula),
+        formula2 = as.formula(formulaLinear),
+        sigmaFormula2 = as.formula(sigmaFormulaLinear),
+        family = family
+  )
+  
+  pheno_data_child <- pheno_data_child %>% 
+    left_join(
+      zDF,
+      by = "child_sentrix_id"
+    )
+  
+  plot <- ggplot(
+    data = pheno_data_child
+  ) +
+    geom_point(
+      mapping = aes(
+        x = !!sym(phenotype),
+        y = !!sym(z_phenotype),
+        col = factor(sex)
+      )
+    )
+  
+  png(
+    filename = glue("plots/{phenotype}_duration.png"),
+    width = 600,
+    height = 600
+  )
+  grid.draw(plot)
+  device <- dev.off()
+  
+  z_phenotype <- paste0("z_", phenotype)
+  
+  sigmaFormula <- paste0(" ~ dummy")
+  
+  formula <- paste0(phenotype, sigmaFormula)
+  
+  family <- BCT
+  
+  zDF <- standardizeBySex(
+    trainingPhenoDF = pheno_data_child,
+    phenoDF = pheno_data_child,
+    id = "child_sentrix_id",
+    x = "dummy",
+    y = phenotype,
+    zY = z_phenotype,
+        formula = as.formula(formula),
+        sigmaFormula = as.formula(sigmaFormula),
+        formula2 = as.formula(formula),
+        sigmaFormula2 = as.formula(sigmaFormula),
+        family = family
+  )
+  
+  pheno_data_child <- pheno_data_child %>% 
+    left_join(
+      zDF,
+      by = "child_sentrix_id"
+    )
+  
+  plot <- ggplot(
+    data = pheno_data_child
+  ) +
+    geom_point(
+      mapping = aes(
+        x = !!sym(phenotype),
+        y = !!sym(z_phenotype),
+        col = factor(sex)
+      )
+    )
+  
+  png(
+    filename = glue("plots/{phenotype}.png"),
+    width = 600,
+    height = 600
+  )
+  grid.draw(plot)
+  device <- dev.off()
+  
+}
+
+phenotypes <- c("hc_birth")
+
+dependentPhenoName <- "length_birth"
+
+pheno_data_child$dummy <- 0
+
+for (phenotype in phenotypes) {
+  
+  print(paste0(Sys.time(), "    Standardizing ", phenotype))
+  
+  z_phenotype <- paste0("z_duration_", phenotype)
+  
+  sigmaFormula <- paste0(" ~ fp(", dependentPhenoName, ")")
+  sigmaFormulaLinear <- paste0(" ~ ", dependentPhenoName)
+  
+  formula <- paste0(phenotype, sigmaFormula)
+  formulaLinear <- paste0(phenotype, sigmaFormulaLinear)
+  
+  family <- BCT
+  
+  zDF <- standardizeBySex(
+    trainingPhenoDF = pheno_data_child,
+    phenoDF = pheno_data_child,
+    id = "child_sentrix_id",
+    x = dependentPhenoName,
+    y = phenotype,
+    zY = z_phenotype,
+        formula = as.formula(formula),
+        sigmaFormula = as.formula(sigmaFormula),
+        formula2 = as.formula(formulaLinear),
+        sigmaFormula2 = as.formula(sigmaFormulaLinear),
+        family = family
+  )
+  
+  pheno_data_child <- pheno_data_child %>% 
+    left_join(
+      zDF,
+      by = "child_sentrix_id"
+    )
+  
+  plot <- ggplot(
+    data = pheno_data_child
+  ) +
+    geom_point(
+      mapping = aes(
+        x = !!sym(phenotype),
+        y = !!sym(z_phenotype),
+        col = factor(sex)
+      )
+    )
+  
+  png(
+    filename = glue("plots/{phenotype}_{dependentPhenoName}.png"),
+    width = 600,
+    height = 600
+  )
+  grid.draw(plot)
+  device <- dev.off()
+  
+  z_phenotype <- paste0("z_", phenotype)
+  
+  sigmaFormula <- paste0(" ~ dummy")
+  
+  formula <- paste0(phenotype, sigmaFormula)
+  
+  family <- BCT
+  
+  zDF <- standardizeBySex(
+    trainingPhenoDF = pheno_data_child,
+    phenoDF = pheno_data_child,
+    id = "child_sentrix_id",
+    x = "dummy",
+    y = phenotype,
+    zY = z_phenotype,
+        formula = as.formula(formula),
+        sigmaFormula = as.formula(sigmaFormula),
+        formula2 = as.formula(formula),
+        sigmaFormula2 = as.formula(sigmaFormula),
+        family = family
+  )
+  
+  pheno_data_child <- pheno_data_child %>% 
+    left_join(
+      zDF,
+      by = "child_sentrix_id"
+    )
+  
+  plot <- ggplot(
+    data = pheno_data_child
+  ) +
+    geom_point(
+      mapping = aes(
+        x = !!sym(phenotype),
+        y = !!sym(z_phenotype),
+        col = factor(sex)
+      )
+    )
+  
+  png(
+    filename = glue("plots/{phenotype}.png"),
+    width = 600,
+    height = 600
+  )
+  grid.draw(plot)
+  device <- dev.off()
+  
+}
+
+```
+
+Association with NVP/HG
