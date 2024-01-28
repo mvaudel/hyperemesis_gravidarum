@@ -26,6 +26,7 @@ library(parallel)
 # Solve name space conflicts
 conflicts_prefer(dplyr::filter)
 conflicts_prefer(dplyr::select)
+conflicts_prefer(stats::fisher.test)
 
 # General parameters
 theme_set(theme_bw(base_size = 14))
@@ -55,19 +56,13 @@ pregnancy_data <- read.table(
   file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_24-01-16/pregnancy.gz",
   header = T,
   sep = "\t"
-) %>% 
-  filter(
-    !is.na(child_sentrix_id) | !is.na(mother_sentrix_id)
-  )
+)
 
 mfr_data <- read.table(
   file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_24-01-16/mfr.gz",
   header = T,
   sep = "\t"
-) %>% 
-  filter(
-    !is.na(child_sentrix_id) | !is.na(mother_sentrix_id)
-  )
+)
 
 ```
 
@@ -106,10 +101,13 @@ nvp_data <- pregnancy_data %>%
     hospitalized_pre_eclampsia = ifelse(!is.na(hospitalized_pre_eclampsia), 1, 0)
   ) %>% 
   select(
-    child_sentrix_id, mother_sentrix_id, pregnancy_duration_term, sex, hospitalized_pre_eclampsia, nausea_vomiting, nausea_vomiting_hg, nausea_duration, vomiting_duration
+    child_id, mother_id, child_sentrix_id, mother_sentrix_id, pregnancy_duration_term, sex, hospitalized_pre_eclampsia, nausea_vomiting, nausea_vomiting_hg, nausea_duration, vomiting_duration
   )
 
 birth_data <- mfr_data %>% 
+  filter(
+    is.na(plural_birth)
+  ) %>% 
   mutate(
     placental_weight = ifelse(placental_weight < 500 | placental_weight > 1000, NA, placental_weight),
     n_previous_stillbirths = ifelse(n_previous_stillbirths == "2 or more", 2, as.numeric(n_previous_stillbirths)),
@@ -120,28 +118,30 @@ birth_data <- mfr_data %>%
     abruptio_placentae = ifelse(!is.na(abruptio_placentae), 1, 0),
     placenta_previa = ifelse(!is.na(placenta_previa), 1, 0),
     perinatal_death = ifelse(!is.na(perinatal_death), 1, 0),
+    early_preeclampsia = ifelse(!is.na(early_preeclampsia), 1, 0),
+    preeclampsia_serious = ifelse(!is.na(preeclampsia) & preeclampsia == "Serious", 1, 0),
+    preeclampsia_quant = ifelse(is.na(preeclampsia), "No", preeclampsia),
+    preeclampsia_quant = as.numeric(factor(preeclampsia_quant, levels = c("No", "Light", "Unspecified", "Serious"))),
+    preeclampsia = ifelse(!is.na(preeclampsia) | !is.na(eclampsia_total), 1, 0),
+    pregnancy_hellp = ifelse(!is.na(pregnancy_hellp), 1, 0),
     spontaneous_delivery = ifelse(initiation == "Spontaneous", 1, 0)
   ) %>% 
   select(
-    child_sentrix_id, mother_sentrix_id, pregnancy_duration, n_previous_stillbirths, n_previous_live_births, previous_miscarriages_before_12w, previous_miscarriages_12_23w, previous_miscarriages, abruptio_placentae, placenta_previa, placental_weight, weight_birth, length_birth, hc_birth, perinatal_death, spontaneous_delivery
-  )
-
-pheno_data_mother <- nvp_data %>% 
-  filter(
-    !is.na(mother_sentrix_id) & mother_sentrix_id %in% unrelated_mothers$sentrix_id
-  ) %>% 
-  left_join(
-    birth_data %>% 
-  filter(
-    !is.na(mother_sentrix_id) & mother_sentrix_id %in% unrelated_mothers$sentrix_id
-  ) %>% 
-    select(
-      -child_sentrix_id
-    ),
-  by = "mother_sentrix_id"
+    child_id, child_sentrix_id, mother_sentrix_id, pregnancy_duration, n_previous_stillbirths, n_previous_live_births, previous_miscarriages_before_12w, previous_miscarriages_12_23w, previous_miscarriages, abruptio_placentae, placenta_previa, placental_weight, weight_birth, length_birth, hc_birth, perinatal_death, spontaneous_delivery, eclampsia_total, preeclampsia, early_preeclampsia, preeclampsia_serious, preeclampsia_quant, pregnancy_hellp
   )
 
 pheno_data_child <- nvp_data %>% 
+  left_join(
+    birth_data %>% 
+    select(
+      -child_sentrix_id, -mother_sentrix_id
+    ),
+  by = "child_id"
+  ) %>% 
+  group_by(mother_id) %>% 
+  slice_sample(n = 1)
+
+pheno_child_genotyped_unrelated <- nvp_data %>% 
   filter(
     !is.na(child_sentrix_id) & child_sentrix_id %in% unrelated_children$sentrix_id
   ) %>% 
@@ -151,29 +151,29 @@ pheno_data_child <- nvp_data %>%
     !is.na(child_sentrix_id) & child_sentrix_id %in% unrelated_children$sentrix_id
   ) %>% 
     select(
-      -mother_sentrix_id
+      -mother_sentrix_id, -child_id
     ),
   by = "child_sentrix_id"
   )
-
 
 ```
 
 Standardize anthropometric values
 
 ```{r}
+#| output: false
 
 phenotypes <- c("placental_weight", "weight_birth")
 
 dependentPhenoName <- "pregnancy_duration"
 
-pheno_data_child$dummy <- 0
+pheno_child_genotyped_unrelated$dummy <- 0
 
 for (phenotype in phenotypes) {
   
   print(paste0(Sys.time(), "    Standardizing ", phenotype))
   
-  z_phenotype <- paste0("z_duration_", phenotype)
+  z_phenotype <- paste0("z_", phenotype, "_", dependentPhenoName)
   
   sigmaFormula <- paste0(" ~ fp(", dependentPhenoName, ")")
   sigmaFormulaLinear <- paste0(" ~ ", dependentPhenoName)
@@ -184,135 +184,47 @@ for (phenotype in phenotypes) {
   family <- BCT
   
   zDF <- standardizeBySex(
-    trainingPhenoDF = pheno_data_child,
-    phenoDF = pheno_data_child,
+    trainingPhenoDF = pheno_child_genotyped_unrelated,
+    phenoDF = pheno_child_genotyped_unrelated,
     id = "child_sentrix_id",
     x = dependentPhenoName,
     y = phenotype,
     zY = z_phenotype,
-        formula = as.formula(formula),
-        sigmaFormula = as.formula(sigmaFormula),
-        formula2 = as.formula(formulaLinear),
-        sigmaFormula2 = as.formula(sigmaFormulaLinear),
-        family = family
+    formula = as.formula(formula),
+    sigmaFormula = as.formula(sigmaFormula),
+    formula2 = as.formula(formulaLinear),
+    sigmaFormula2 = as.formula(sigmaFormulaLinear),
+    family = family
   )
   
-  pheno_data_child <- pheno_data_child %>% 
+  pheno_child_genotyped_unrelated <- pheno_child_genotyped_unrelated %>% 
     left_join(
       zDF,
       by = "child_sentrix_id"
     )
   
-  plot <- ggplot(
-    data = pheno_data_child
-  ) +
-    geom_point(
-      mapping = aes(
-        x = !!sym(phenotype),
-        y = !!sym(z_phenotype),
-        col = factor(sex)
-      )
-    )
-  
-  png(
-    filename = glue("plots/{phenotype}_duration.png"),
-    width = 600,
-    height = 600
-  )
-  grid.draw(plot)
-  device <- dev.off()
-  
-  z_phenotype <- paste0("z_", phenotype)
-  
-  sigmaFormula <- paste0(" ~ dummy")
-  
-  formula <- paste0(phenotype, sigmaFormula)
-  
-  family <- BCT
-  
   zDF <- standardizeBySex(
-    trainingPhenoDF = pheno_data_child,
+    trainingPhenoDF = pheno_child_genotyped_unrelated,
     phenoDF = pheno_data_child,
-    id = "child_sentrix_id",
-    x = "dummy",
-    y = phenotype,
-    zY = z_phenotype,
-        formula = as.formula(formula),
-        sigmaFormula = as.formula(sigmaFormula),
-        formula2 = as.formula(formula),
-        sigmaFormula2 = as.formula(sigmaFormula),
-        family = family
-  )
-  
-  pheno_data_child <- pheno_data_child %>% 
-    left_join(
-      zDF,
-      by = "child_sentrix_id"
-    )
-  
-  plot <- ggplot(
-    data = pheno_data_child
-  ) +
-    geom_point(
-      mapping = aes(
-        x = !!sym(phenotype),
-        y = !!sym(z_phenotype),
-        col = factor(sex)
-      )
-    )
-  
-  png(
-    filename = glue("plots/{phenotype}.png"),
-    width = 600,
-    height = 600
-  )
-  grid.draw(plot)
-  device <- dev.off()
-  
-}
-
-phenotypes <- c("hc_birth")
-
-dependentPhenoName <- "length_birth"
-
-pheno_data_child$dummy <- 0
-
-for (phenotype in phenotypes) {
-  
-  print(paste0(Sys.time(), "    Standardizing ", phenotype))
-  
-  z_phenotype <- paste0("z_duration_", phenotype)
-  
-  sigmaFormula <- paste0(" ~ fp(", dependentPhenoName, ")")
-  sigmaFormulaLinear <- paste0(" ~ ", dependentPhenoName)
-  
-  formula <- paste0(phenotype, sigmaFormula)
-  formulaLinear <- paste0(phenotype, sigmaFormulaLinear)
-  
-  family <- BCT
-  
-  zDF <- standardizeBySex(
-    trainingPhenoDF = pheno_data_child,
-    phenoDF = pheno_data_child,
-    id = "child_sentrix_id",
+    id = "child_id",
     x = dependentPhenoName,
     y = phenotype,
     zY = z_phenotype,
-        formula = as.formula(formula),
-        sigmaFormula = as.formula(sigmaFormula),
-        formula2 = as.formula(formulaLinear),
-        sigmaFormula2 = as.formula(sigmaFormulaLinear),
-        family = family
+    formula = as.formula(formula),
+    sigmaFormula = as.formula(sigmaFormula),
+    formula2 = as.formula(formulaLinear),
+    sigmaFormula2 = as.formula(sigmaFormulaLinear),
+    family = family
   )
   
   pheno_data_child <- pheno_data_child %>% 
     left_join(
       zDF,
-      by = "child_sentrix_id"
+      by = "child_id"
     )
   
   plot <- ggplot(
-    data = pheno_data_child
+    data = pheno_child_genotyped_unrelated
   ) +
     geom_point(
       mapping = aes(
@@ -339,27 +251,49 @@ for (phenotype in phenotypes) {
   family <- BCT
   
   zDF <- standardizeBySex(
-    trainingPhenoDF = pheno_data_child,
-    phenoDF = pheno_data_child,
+    trainingPhenoDF = pheno_child_genotyped_unrelated,
+    phenoDF = pheno_child_genotyped_unrelated,
     id = "child_sentrix_id",
     x = "dummy",
     y = phenotype,
     zY = z_phenotype,
-        formula = as.formula(formula),
-        sigmaFormula = as.formula(sigmaFormula),
-        formula2 = as.formula(formula),
-        sigmaFormula2 = as.formula(sigmaFormula),
-        family = family
+    formula = as.formula(formula),
+    sigmaFormula = as.formula(sigmaFormula),
+    formula2 = as.formula(formula),
+    sigmaFormula2 = as.formula(sigmaFormula),
+    family = family
   )
   
-  pheno_data_child <- pheno_data_child %>% 
+  pheno_child_genotyped_unrelated <- pheno_child_genotyped_unrelated %>% 
     left_join(
       zDF,
       by = "child_sentrix_id"
     )
   
+  family <- BCT
+  
+  zDF <- standardizeBySex(
+    trainingPhenoDF = pheno_child_genotyped_unrelated,
+    phenoDF = pheno_data_child,
+    id = "child_id",
+    x = "dummy",
+    y = phenotype,
+    zY = z_phenotype,
+    formula = as.formula(formula),
+    sigmaFormula = as.formula(sigmaFormula),
+    formula2 = as.formula(formula),
+    sigmaFormula2 = as.formula(sigmaFormula),
+    family = family
+  )
+  
+  pheno_data_child <- pheno_data_child %>% 
+    left_join(
+      zDF,
+      by = "child_id"
+    )
+  
   plot <- ggplot(
-    data = pheno_data_child
+    data = pheno_child_genotyped_unrelated
   ) +
     geom_point(
       mapping = aes(
@@ -379,6 +313,599 @@ for (phenotype in phenotypes) {
   
 }
 
+phenotypes <- c("hc_birth")
+
+dependentPhenoName <- "length_birth"
+
+pheno_child_genotyped_unrelated$dummy <- 0
+
+for (phenotype in phenotypes) {
+  
+  print(paste0(Sys.time(), "    Standardizing ", phenotype))
+  
+  z_phenotype <- paste0("z_", phenotype, "_", dependentPhenoName)
+  
+  sigmaFormula <- paste0(" ~ fp(", dependentPhenoName, ")")
+  sigmaFormulaLinear <- paste0(" ~ ", dependentPhenoName)
+  
+  formula <- paste0(phenotype, sigmaFormula)
+  formulaLinear <- paste0(phenotype, sigmaFormulaLinear)
+  
+  family <- BCT
+  
+  zDF <- standardizeBySex(
+    trainingPhenoDF = pheno_child_genotyped_unrelated,
+    phenoDF = pheno_child_genotyped_unrelated,
+    id = "child_sentrix_id",
+    x = dependentPhenoName,
+    y = phenotype,
+    zY = z_phenotype,
+    formula = as.formula(formula),
+    sigmaFormula = as.formula(sigmaFormula),
+    formula2 = as.formula(formulaLinear),
+    sigmaFormula2 = as.formula(sigmaFormulaLinear),
+    family = family
+  )
+  
+  pheno_child_genotyped_unrelated <- pheno_child_genotyped_unrelated %>% 
+    left_join(
+      zDF,
+      by = "child_sentrix_id"
+    )
+  
+  zDF <- standardizeBySex(
+    trainingPhenoDF = pheno_child_genotyped_unrelated,
+    phenoDF = pheno_data_child,
+    id = "child_id",
+    x = dependentPhenoName,
+    y = phenotype,
+    zY = z_phenotype,
+    formula = as.formula(formula),
+    sigmaFormula = as.formula(sigmaFormula),
+    formula2 = as.formula(formulaLinear),
+    sigmaFormula2 = as.formula(sigmaFormulaLinear),
+    family = family
+  )
+  
+  pheno_data_child <- pheno_data_child %>% 
+    left_join(
+      zDF,
+      by = "child_id"
+    )
+  
+  plot <- ggplot(
+    data = pheno_child_genotyped_unrelated
+  ) +
+    geom_point(
+      mapping = aes(
+        x = !!sym(phenotype),
+        y = !!sym(z_phenotype),
+        col = factor(sex)
+      )
+    )
+  
+  png(
+    filename = glue("plots/{phenotype}_{dependentPhenoName}.png"),
+    width = 600,
+    height = 600
+  )
+  grid.draw(plot)
+  device <- dev.off()
+  
+  z_phenotype <- paste0("z_", phenotype)
+  
+  sigmaFormula <- paste0(" ~ dummy")
+  
+  formula <- paste0(phenotype, sigmaFormula)
+  
+  family <- BCT
+  
+  zDF <- standardizeBySex(
+    trainingPhenoDF = pheno_child_genotyped_unrelated,
+    phenoDF = pheno_child_genotyped_unrelated,
+    id = "child_sentrix_id",
+    x = "dummy",
+    y = phenotype,
+    zY = z_phenotype,
+    formula = as.formula(formula),
+    sigmaFormula = as.formula(sigmaFormula),
+    formula2 = as.formula(formula),
+    sigmaFormula2 = as.formula(sigmaFormula),
+    family = family
+  )
+  
+  pheno_child_genotyped_unrelated <- pheno_child_genotyped_unrelated %>% 
+    left_join(
+      zDF,
+      by = "child_sentrix_id"
+    )
+  
+  zDF <- standardizeBySex(
+    trainingPhenoDF = pheno_child_genotyped_unrelated,
+    phenoDF = pheno_data_child,
+    id = "child_id",
+    x = "dummy",
+    y = phenotype,
+    zY = z_phenotype,
+    formula = as.formula(formula),
+    sigmaFormula = as.formula(sigmaFormula),
+    formula2 = as.formula(formula),
+    sigmaFormula2 = as.formula(sigmaFormula),
+    family = family
+  )
+  
+  pheno_data_child <- pheno_data_child %>% 
+    left_join(
+      zDF,
+      by = "child_id"
+    )
+  
+  plot <- ggplot(
+    data = pheno_child_genotyped_unrelated
+  ) +
+    geom_point(
+      mapping = aes(
+        x = !!sym(phenotype),
+        y = !!sym(z_phenotype),
+        col = factor(sex)
+      )
+    )
+  
+  png(
+    filename = glue("plots/{phenotype}.png"),
+    width = 600,
+    height = 600
+  )
+  grid.draw(plot)
+  device <- dev.off()
+  
+}
+
+phenotypes <- c("hc_birth", "placental_weight")
+
+dependentPhenoName <- "weight_birth"
+
+pheno_child_genotyped_unrelated$dummy <- 0
+
+for (phenotype in phenotypes) {
+  
+  print(paste0(Sys.time(), "    Standardizing ", phenotype))
+  
+  z_phenotype <- paste0("z_", phenotype, "_", dependentPhenoName)
+  
+  sigmaFormula <- paste0(" ~ fp(", dependentPhenoName, ")")
+  sigmaFormulaLinear <- paste0(" ~ ", dependentPhenoName)
+  
+  formula <- paste0(phenotype, sigmaFormula)
+  formulaLinear <- paste0(phenotype, sigmaFormulaLinear)
+  
+  family <- BCT
+  
+  zDF <- standardizeBySex(
+    trainingPhenoDF = pheno_child_genotyped_unrelated,
+    phenoDF = pheno_child_genotyped_unrelated,
+    id = "child_sentrix_id",
+    x = dependentPhenoName,
+    y = phenotype,
+    zY = z_phenotype,
+    formula = as.formula(formula),
+    sigmaFormula = as.formula(sigmaFormula),
+    formula2 = as.formula(formulaLinear),
+    sigmaFormula2 = as.formula(sigmaFormulaLinear),
+    family = family
+  )
+  
+  pheno_child_genotyped_unrelated <- pheno_child_genotyped_unrelated %>% 
+    left_join(
+      zDF,
+      by = "child_sentrix_id"
+    )
+  
+  zDF <- standardizeBySex(
+    trainingPhenoDF = pheno_child_genotyped_unrelated,
+    phenoDF = pheno_data_child,
+    id = "child_id",
+    x = dependentPhenoName,
+    y = phenotype,
+    zY = z_phenotype,
+    formula = as.formula(formula),
+    sigmaFormula = as.formula(sigmaFormula),
+    formula2 = as.formula(formulaLinear),
+    sigmaFormula2 = as.formula(sigmaFormulaLinear),
+    family = family
+  )
+  
+  pheno_data_child <- pheno_data_child %>% 
+    left_join(
+      zDF,
+      by = "child_id"
+    )
+  
+  plot <- ggplot(
+    data = pheno_child_genotyped_unrelated
+  ) +
+    geom_point(
+      mapping = aes(
+        x = !!sym(phenotype),
+        y = !!sym(z_phenotype),
+        col = factor(sex)
+      )
+    )
+  
+  png(
+    filename = glue("plots/{phenotype}_{dependentPhenoName}.png"),
+    width = 600,
+    height = 600
+  )
+  grid.draw(plot)
+  device <- dev.off()
+  
+}
+
 ```
 
-Association with NVP/HG
+Phenotypic association with NVP/HG
+
+```{r}
+
+binary_phenotypes <- c("abruptio_placentae", "placenta_previa", "perinatal_death", "spontaneous_delivery", "early_preeclampsia", "preeclampsia", "pregnancy_hellp", "preeclampsia_serious")
+
+term_levels = c("<37w", ">=37w", "All")
+
+fisher_results <- list()
+
+for (pheno in binary_phenotypes) {
+  
+  for (term in 0:2) {
+    
+    if (term != 2) {
+      
+      test_data <- pheno_data_child %>% 
+        filter(
+          pregnancy_duration_term == term & !is.na(!!sym(pheno))
+        )
+      
+    } else {
+      
+      test_data <- pheno_data_child %>% 
+        filter(
+          !is.na(!!sym(pheno))
+        )
+      
+    }
+    
+    n_1_0 <- sum(test_data$nausea_vomiting_hg == 0 & test_data[[pheno]] == 0)
+    n_1_1 <- sum(test_data$nausea_vomiting_hg == 0 & test_data[[pheno]] == 1)
+    n_2_0 <- sum(test_data$nausea_vomiting_hg == 1 & test_data[[pheno]] == 0)
+    n_2_1 <- sum(test_data$nausea_vomiting_hg == 1 & test_data[[pheno]] == 1)
+    
+    test_results <- fisher.test(
+      x = matrix(
+        data = c(n_1_0, n_2_0, n_1_1, n_2_1), 
+        nrow = 2
+      )
+    )
+    
+    test_df <- data.frame(
+      pheno = pheno,
+      term = term_levels[term + 1],
+      category_1 = "No symptom",
+      category_2 = "NVP",
+      n_1_0 = n_1_0,
+      n_1_1 = n_1_1,
+      freq_1 = n_1_1 / n_1_0,
+      n_2_0 = n_2_0,
+      n_2_1 = n_2_1,
+      freq_2 = n_2_1 / n_2_0,
+      estimate = unname(test_results$estimate),
+      confidence_interval_low = test_results$conf.int[1],
+      confidence_interval_high = test_results$conf.int[2],
+      p_value = test_results$p.value
+    )
+    
+    fisher_results[[length(fisher_results) + 1]] <- test_df
+    
+    n_1_0 <- sum(test_data$nausea_vomiting_hg != 2 & test_data[[pheno]] == 0)
+    n_1_1 <- sum(test_data$nausea_vomiting_hg != 2 & test_data[[pheno]] == 1)
+    n_2_0 <- sum(test_data$nausea_vomiting_hg == 2 & test_data[[pheno]] == 0)
+    n_2_1 <- sum(test_data$nausea_vomiting_hg == 2 & test_data[[pheno]] == 1)
+    
+    test_results <- fisher.test(
+      x = matrix(
+        data = c(n_1_0, n_2_0, n_1_1, n_2_1), 
+        nrow = 2
+      )
+    )
+    
+    test_df <- data.frame(
+      pheno = pheno,
+      term = term_levels[term + 1],
+      category_1 = "No HG",
+      category_2 = "HG",
+      n_1_0 = n_1_0,
+      n_1_1 = n_1_1,
+      freq_1 = n_1_1 / n_1_0,
+      n_2_0 = n_2_0,
+      n_2_1 = n_2_1,
+      freq_2 = n_2_1 / n_2_0,
+      estimate = unname(test_results$estimate),
+      confidence_interval_low = test_results$conf.int[1],
+      confidence_interval_high = test_results$conf.int[2],
+      p_value = test_results$p.value
+    )
+    
+    fisher_results[[length(fisher_results) + 1]] <- test_df
+    
+    n_1_0 <- sum(test_data$nausea_vomiting_hg == 1 & test_data[[pheno]] == 0)
+    n_1_1 <- sum(test_data$nausea_vomiting_hg == 1 & test_data[[pheno]] == 1)
+    n_2_0 <- sum(test_data$nausea_vomiting_hg == 2 & test_data[[pheno]] == 0)
+    n_2_1 <- sum(test_data$nausea_vomiting_hg == 2 & test_data[[pheno]] == 1)
+    
+    test_results <- fisher.test(
+      x = matrix(
+        data = c(n_1_0, n_2_0, n_1_1, n_2_1), 
+        nrow = 2
+      )
+    )
+    
+    test_df <- data.frame(
+      pheno = pheno,
+      term = term_levels[term + 1],
+      category_1 = "NVP",
+      category_2 = "HG",
+      n_1_0 = n_1_0,
+      n_1_1 = n_1_1,
+      freq_1 = n_1_1 / n_1_0,
+      n_2_0 = n_2_0,
+      n_2_1 = n_2_1,
+      freq_2 = n_2_1 / n_2_0,
+      estimate = unname(test_results$estimate),
+      confidence_interval_low = test_results$conf.int[1],
+      confidence_interval_high = test_results$conf.int[2],
+      p_value = test_results$p.value
+    )
+    
+    fisher_results[[length(fisher_results) + 1]] <- test_df
+    
+    n_1_0 <- sum(test_data$nausea_vomiting_hg == 0 & test_data[[pheno]] == 0)
+    n_1_1 <- sum(test_data$nausea_vomiting_hg == 0 & test_data[[pheno]] == 1)
+    n_2_0 <- sum(test_data$nausea_vomiting_hg == 2 & test_data[[pheno]] == 0)
+    n_2_1 <- sum(test_data$nausea_vomiting_hg == 2 & test_data[[pheno]] == 1)
+    
+    test_results <- fisher.test(
+      x = matrix(
+        data = c(n_1_0, n_2_0, n_1_1, n_2_1), 
+        nrow = 2
+      )
+    )
+    
+    test_df <- data.frame(
+      pheno = pheno,
+      term = term_levels[term + 1],
+      category_1 = "No symptom",
+      category_2 = "HG",
+      n_1_0 = n_1_0,
+      n_1_1 = n_1_1,
+      freq_1 = n_1_1 / n_1_0,
+      n_2_0 = n_2_0,
+      n_2_1 = n_2_1,
+      freq_2 = n_2_1 / n_2_0,
+      estimate = unname(test_results$estimate),
+      confidence_interval_low = test_results$conf.int[1],
+      confidence_interval_high = test_results$conf.int[2],
+      p_value = test_results$p.value
+    )
+    
+    fisher_results[[length(fisher_results) + 1]] <- test_df
+    
+  }
+}
+
+fisher_results <- do.call(rbind, fisher_results)
+
+write.table(
+  fisher_results,
+  file = gzfile("tables/binary_phenotypes_fisher_test.gz"),
+  sep = " \t",
+  col.names = T,
+  row.names = T
+)
+
+numeric_phenotypes <- c("n_previous_stillbirths", "n_previous_live_births", "previous_miscarriages", "pregnancy_duration", "placental_weight", "z_placental_weight", "z_placental_weight_pregnancy_duration", "weight_birth", "z_weight_birth", "z_weight_birth_pregnancy_duration", "hc_birth", "z_hc_birth", "z_hc_birth_length_birth", "z_hc_birth_weight_birth", "z_placental_weight_weight_birth", "preeclampsia_quant")
+
+t_results <- list()
+
+for (pheno in numeric_phenotypes) {
+  
+  for (term in 0:2) {
+    
+    if (term != 2) {
+      
+      test_data <- pheno_data_child %>% 
+        filter(
+          pregnancy_duration_term == term & !is.na(!!sym(pheno))
+        )
+      
+    } else {
+      
+      test_data <- pheno_data_child %>% 
+        filter(
+          !is.na(!!sym(pheno))
+        )
+      
+    }
+    
+    x <- test_data[[pheno]][test_data$nausea_vomiting_hg == 0]
+    mean_x <- mean(x)
+    sd_x <- sd(x)
+    n_x <- length(x)
+    
+    y <- test_data[[pheno]][test_data$nausea_vomiting_hg == 1]
+    mean_y <- mean(y)
+    sd_y <- sd(y)
+    n_y <- length(y)
+    
+    test_results <- t.test(
+      x = x,
+      y = y
+    )
+    
+    test_df <- data.frame(
+      pheno = pheno,
+      term = term_levels[term + 1],
+      category_1 = "No symptom",
+      category_2 = "NVP",
+      mean_1 = mean_x,
+      sd_1 = sd_x,
+      n_1 = n_x,
+      mean_2 = mean_y,
+      sd_2 = sd_y,
+      n_2 = n_y,
+      p_value = test_results$p.value
+    )
+    
+    t_results[[length(t_results) + 1]] <- test_df
+    
+    x <- test_data[[pheno]][test_data$nausea_vomiting_hg == 0]
+    mean_x <- mean(x)
+    sd_x <- sd(x)
+    n_x <- length(x)
+    
+    y <- test_data[[pheno]][test_data$nausea_vomiting_hg == 2]
+    mean_y <- mean(y)
+    sd_y <- sd(y)
+    n_y <- length(y)
+    
+    test_results <- t.test(
+      x = x,
+      y = y
+    )
+    
+    test_df <- data.frame(
+      pheno = pheno,
+      term = term_levels[term + 1],
+      category_1 = "No symptom",
+      category_2 = "HG",
+      mean_1 = mean_x,
+      sd_1 = sd_x,
+      n_1 = n_x,
+      mean_2 = mean_y,
+      sd_2 = sd_y,
+      n_2 = n_y,
+      p_value = test_results$p.value
+    )
+    
+    t_results[[length(t_results) + 1]] <- test_df
+    
+    x <- test_data[[pheno]][test_data$nausea_vomiting_hg == 1]
+    mean_x <- mean(x)
+    sd_x <- sd(x)
+    n_x <- length(x)
+    
+    y <- test_data[[pheno]][test_data$nausea_vomiting_hg == 2]
+    mean_y <- mean(y)
+    sd_y <- sd(y)
+    n_y <- length(y)
+    
+    test_results <- t.test(
+      x = x,
+      y = y
+    )
+    
+    test_df <- data.frame(
+      pheno = pheno,
+      term = term_levels[term + 1],
+      category_1 = "NVP",
+      category_2 = "HG",
+      mean_1 = mean_x,
+      sd_1 = sd_x,
+      n_1 = n_x,
+      mean_2 = mean_y,
+      sd_2 = sd_y,
+      n_2 = n_y,
+      p_value = test_results$p.value
+    )
+    
+    t_results[[length(t_results) + 1]] <- test_df
+    
+    x <- test_data[[pheno]][test_data$nausea_vomiting_hg != 2]
+    mean_x <- mean(x)
+    sd_x <- sd(x)
+    n_x <- length(x)
+    
+    y <- test_data[[pheno]][test_data$nausea_vomiting_hg == 2]
+    mean_y <- mean(y)
+    sd_y <- sd(y)
+    n_y <- length(y)
+    
+    test_results <- t.test(
+      x = x,
+      y = y
+    )
+    
+    test_df <- data.frame(
+      pheno = pheno,
+      term = term_levels[term + 1],
+      category_1 = "No HG",
+      category_2 = "HG",
+      mean_1 = mean_x,
+      sd_1 = sd_x,
+      n_1 = n_x,
+      mean_2 = mean_y,
+      sd_2 = sd_y,
+      n_2 = n_y,
+      p_value = test_results$p.value
+    )
+    
+    t_results[[length(t_results) + 1]] <- test_df
+    
+  }
+}
+
+t_results <- do.call(rbind, t_results)
+
+write.table(
+  t_results,
+  file = gzfile("tables/numeric_phenotypes_t_test.gz"),
+  sep = " \t",
+  col.names = T,
+  row.names = T
+)
+
+```
+
+Association with outcomes
+
+```{r}
+
+genotypes_children <- read.table(
+  file = "/mnt/work/marc/hg/variants/mother_genotypes.raw",
+  header = T,
+  sep = "\t"
+) %>% 
+  clean_names() %>% 
+  select(
+    -fid, -pat, -mat, -sex, -phenotype
+  ) %>% 
+  pivot_longer(
+    cols = -iid,
+    names_to = "plink_id",
+    values_to = "genotype"
+  )
+
+genotypes_children <- read.table(
+  file = "/mnt/work/marc/hg/variants/children_genotypes.raw",
+  header = T,
+  sep = "\t"
+) %>% 
+  clean_names() %>% 
+  select(
+    -fid, -pat, -mat, -sex, -phenotype
+  ) %>% 
+  pivot_longer(
+    cols = -iid,
+    names_to = "plink_id",
+    values_to = "genotype"
+  )
+
+```
