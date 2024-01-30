@@ -914,7 +914,7 @@ Variant association with phenotypes
 
 ```{r}
 
-#' Run a linear model for the variant at the given position against the given phenotype.
+#' Run a linear or logistic regression for the variant at the given position against the given phenotype.
 #' 
 #' @param plink_id The id of the variant.
 #' @param snp_data The data frame containing the genotypes and phenotypes.
@@ -982,7 +982,7 @@ lm_function <- function(plink_id, snp_data, pheno) {
   
 }
 
-phenotypes <- c("hospitalized_pre_eclampsia", "nausea_vomiting", "nausea_vomiting_hg", "pregnancy_duration", "n_previous_stillbirths", "n_previous_live_births", "previous_miscarriages_before_12w", "previous_miscarriages_12_23w", "previous_miscarriages", "abruptio_placentae", "placenta_previa", "placental_weight", "weight_birth", "length_birth", "hc_birth", "perinatal_death", "spontaneous_delivery", "eclampsia_total", "preeclampsia", "early_preeclampsia", "preeclampsia_serious", "preeclampsia_quant", "pregnancy_hellp", "z_placental_weight_pregnancy_duration", "z_placental_weight", "z_weight_birth_pregnancy_duration", "z_weight_birth", "z_hc_birth_length_birth", "z_hc_birth", "z_hc_birth_weight_birth", "z_placental_weight_weight_birth")
+phenotypes <- c("hospitalized_pre_eclampsia", "nausea_vomiting", "nausea_vomiting_hg", "pregnancy_duration", "n_previous_stillbirths", "n_previous_live_births", "previous_miscarriages_before_12w", "previous_miscarriages_12_23w", "previous_miscarriages", "abruptio_placentae", "placenta_previa", "placental_weight", "weight_birth", "length_birth", "hc_birth", "perinatal_death", "spontaneous_delivery", "preeclampsia", "early_preeclampsia", "preeclampsia_serious", "preeclampsia_quant", "pregnancy_hellp", "z_placental_weight_pregnancy_duration", "z_placental_weight", "z_weight_birth_pregnancy_duration", "z_weight_birth", "z_hc_birth_length_birth", "z_hc_birth", "z_hc_birth_weight_birth", "z_placental_weight_weight_birth")
 
 lm_coefs_mother <- list()
 
@@ -1089,7 +1089,7 @@ for (phenotype_i in 1:length(phenotypes)) {
   
   pheno_name <- phenotypes[phenotype_i]
   
-  print(glue("{Sys.time()} - Association for {phenotype} ({phenotype_i} of {length(phenotypes)})"))
+  print(glue("{Sys.time()} - Association for {pheno_name} ({phenotype_i} of {length(phenotypes)})"))
 
 plot_data <- lm_coefs_mother %>% 
   filter(
@@ -1156,12 +1156,255 @@ plot <- ggplot(
   
   png(
     filename = glue("plots/{phenotype}_moba_vs_meta.png"),
-    width = 600,
+    width = 900,
     height = 600
   )
   grid.draw(plot)
   device <- dev.off()
   
 }
+
+```
+
+Risk score per pregnancy
+
+```{r}
+
+score_df <- genotypes_mothers %>% 
+   separate(
+     plink_id, 
+     into = c("id", "allele"), 
+     extra = "drop", 
+     remove = F
+     ) %>% 
+  mutate(
+    allele = toupper(allele)
+  ) %>% 
+  left_join(
+    meta_results %>% 
+      select(
+        id, allele_meta, beta
+      ),
+    by = "id"
+  ) %>% 
+  mutate(
+    beta_swapped = ifelse(allele != allele_meta, -beta, beta)
+  ) %>% 
+  select(
+    mother_sentrix_id = iid, genotype, beta_swapped
+    ) %>% 
+  filter(
+    !is.na(genotype) & !is.na(beta_swapped)
+  ) %>% 
+  group_by(
+    mother_sentrix_id
+    ) %>% 
+  summarise(
+    meta_score = sum(beta_swapped * genotype)
+  )
+  
+ggplot() +
+  geom_density(
+    data = score_df,
+    mapping = aes(
+      x = meta_score
+    ),
+    fill = "grey80"
+  )
+
+```
+
+Phenotype association with PRS
+
+```{r}
+
+#' Run a linear or logistic regression with the risk score against the given phenotype.
+#' 
+#' @param plink_id The id of the variant.
+#' @param snp_data The data frame containing the genotypes and phenotypes.
+#' 
+#' @return The coefficients of the regression as a data frame.
+lm_function <- function(snp_data, pheno) {
+  
+  model_data <- snp_data[!is.na(snp_data[[pheno]]), ]
+  
+  n_outcome_values <- length(unique(model_data[[pheno]]))
+  
+  if (n_outcome_values < 2) {
+    
+    coefficients <- data.frame(
+      phenotype = pheno,
+      beta = NA,
+      se = NA,
+      p = NA,
+      n = nrow(model_data),
+      stringsAsFactors = F
+    )
+    
+  } else if (n_outcome_values == 2) {
+    
+    lm_results <- glm(
+      formula = glue("{pheno} ~ meta_score"), 
+      family = "binomial", 
+      data = model_data
+    )
+    
+    lm_summary <- summary(lm_results)
+    
+    coefficients <- data.frame(
+      phenotype = pheno,
+      beta = lm_summary$coef["meta_score", "Estimate"],
+      se = lm_summary$coef["meta_score", "Std. Error"],
+      p = lm_summary$coef["meta_score", "Pr(>|z|)"],
+      n = nrow(variant_data),
+      stringsAsFactors = F
+    )
+    
+  } else {
+    
+    lm_results <- lm(
+      formula = glue("{pheno} ~ meta_score"),
+      data = model_data
+    )
+    
+    lm_summary <- summary(lm_results)
+    
+    coefficients <- data.frame(
+      phenotype = pheno,
+      beta = lm_summary$coef["meta_score", "Estimate"],
+      se = lm_summary$coef["meta_score", "Std. Error"],
+      p = lm_summary$coef["meta_score", "Pr(>|t|)"],
+      n = nrow(model_data),
+      stringsAsFactors = F
+    )
+    
+  }
+  
+  return(coefficients)
+  
+}
+
+phenotype_score_df <- score_df %>%
+  inner_join(
+    pheno_data_child %>% 
+      filter(
+        !is.na(mother_sentrix_id)
+      ),
+    by = "mother_sentrix_id"
+  )
+
+lm_score_coefs_mother <- list()
+
+for (phenotype_i in 1:length(phenotypes)) {
+  
+  for (hg in 0:1) {
+    
+    for (pregnancy_duration_i in 0:2) {
+  
+  pheno_name <- phenotypes[phenotype_i]
+  
+  print(glue("{Sys.time()} - Association for {pheno_name} ({phenotype_i} of {length(phenotypes)})"))
+  
+  model_df <- phenotype_score_df
+  
+  if (hg == 0) {
+    
+    model_df <- model_df %>% 
+      filter(
+        nausea_vomiting_hg != 2
+      )
+    
+    hg_label <- "No HG"
+    
+  } else {
+    
+    hg_label <- "All"
+    
+  }
+  
+  if (pregnancy_duration_i == 0) {
+    
+    model_df <- model_df %>% 
+      filter(
+        pregnancy_duration_term == 0
+      )
+    
+  } else if (pregnancy_duration_i == 1) {
+    
+    model_df <- model_df %>% 
+      filter(
+        pregnancy_duration_term == 1
+      )
+    
+  }
+  
+  term_level <- term_levels[pregnancy_duration_i + 1]
+  
+  temp_df <- lm_function(snp_data = model_df, pheno = pheno_name)
+  temp_df$hg <- hg_label
+  temp_df$pregnancy_duration <- term_level
+  
+  lm_score_coefs_mother[[length(lm_score_coefs_mother) + 1]] <- temp_df
+  
+  max_y <- max(phenotype_score_df[[pheno_name]], na.rm = T)
+  
+  plot <- ggplot(
+    data = phenotype_score_df
+  ) +
+    geom_point(
+      mapping = aes(
+        x = meta_score,
+        y = !!sym(pheno_name)
+      ),
+      alpha = 0.2
+    ) +
+    geom_smooth(
+      mapping = aes(
+        x = meta_score,
+        y = !!sym(pheno_name)
+      ),
+      method = "lm"
+    ) +
+    geom_text(
+      mapping = aes(
+        x = 1.25,
+        y = max_y,
+        label = glue("p = {formatC(temp_df$p[1], format = 'e', digits = 2)}")
+      ),
+      col = "blue3",
+      vjust = 1,
+      hjust = 1
+    )
+  
+  png(
+    filename = glue("plots/{phenotype}_{hg_label}_{term_level}_prs.png"),
+    width = 900,
+    height = 600
+  )
+  grid.draw(plot)
+  device <- dev.off()
+  
+  }
+  }
+}
+
+lm_score_coefs_mother <- do.call(rbind, lm_score_coefs_mother)
+
+write.table(
+  lm_score_coefs_mother,
+  file = gzfile("tables/score_association_other_phenotypes.gz"),
+  sep = " \t",
+  col.names = T,
+  row.names = T
+)
+
+
+```
+
+MR with GDF15
+
+```{r}
+
+
 
 ```
