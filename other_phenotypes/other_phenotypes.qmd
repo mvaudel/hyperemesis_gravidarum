@@ -874,12 +874,12 @@ write.table(
 
 ```
 
-Association with outcomes
+Load genotypes
 
 ```{r}
 
-genotypes_children <- read.table(
-  file = "/mnt/work/marc/hg/variants/mother_genotypes.raw",
+genotypes_mothers <- read.table(
+  file = "/mnt/work/marc/hg/variants/mothers_genotypes.raw",
   header = T,
   sep = "\t"
 ) %>% 
@@ -894,7 +894,7 @@ genotypes_children <- read.table(
   )
 
 genotypes_children <- read.table(
-  file = "/mnt/work/marc/hg/variants/children_genotypes.raw",
+  file = "/mnt/work/marc/hg/variants/childen_genotypes.raw",
   header = T,
   sep = "\t"
 ) %>% 
@@ -907,5 +907,261 @@ genotypes_children <- read.table(
     names_to = "plink_id",
     values_to = "genotype"
   )
+
+```
+
+Variant association with phenotypes
+
+```{r}
+
+#' Run a linear model for the variant at the given position against the given phenotype.
+#' 
+#' @param plink_id The id of the variant.
+#' @param snp_data The data frame containing the genotypes and phenotypes.
+#' @return The coefficients of the regression as a data frame.
+lm_function <- function(plink_id, snp_data, pheno) {
+  
+  variant_data <- snp_data[snp_data$plink_id == plink_id & !is.na(snp_data[[pheno]]) & !is.na(snp_data$genotype), ]
+  
+  n_outcome_values <- length(unique(variant_data[[pheno]]))
+  
+  if (n_outcome_values < 2) {
+    
+    coefficients <- data.frame(
+      plink_id = plink_id,
+      phenotype = pheno,
+      beta = NA,
+      se = NA,
+      p = NA,
+      n = nrow(variant_data),
+      stringsAsFactors = F
+    )
+    
+  } else if (n_outcome_values == 2) {
+    
+    lm_results <- glm(
+      formula = glue("{pheno} ~ genotype"), 
+      family = "binomial", 
+      data = variant_data
+    )
+    
+    lm_summary <- summary(lm_results)
+    
+    coefficients <- data.frame(
+      plink_id = plink_id,
+      phenotype = pheno,
+      beta = lm_summary$coef["genotype", "Estimate"],
+      se = lm_summary$coef["genotype", "Std. Error"],
+      p = lm_summary$coef["genotype", "Pr(>|z|)"],
+      n = nrow(variant_data),
+      stringsAsFactors = F
+    )
+    
+  } else {
+    
+    lm_results <- lm(
+      formula = glue("{pheno} ~ genotype"),
+      data = variant_data
+    )
+    
+    lm_summary <- summary(lm_results)
+    
+    coefficients <- data.frame(
+      plink_id = plink_id,
+      phenotype = pheno,
+      beta = lm_summary$coef["genotype", "Estimate"],
+      se = lm_summary$coef["genotype", "Std. Error"],
+      p = lm_summary$coef["genotype", "Pr(>|t|)"],
+      n = nrow(variant_data),
+      stringsAsFactors = F
+    )
+    
+  }
+  
+  return(coefficients)
+  
+}
+
+phenotypes <- c("hospitalized_pre_eclampsia", "nausea_vomiting", "nausea_vomiting_hg", "pregnancy_duration", "n_previous_stillbirths", "n_previous_live_births", "previous_miscarriages_before_12w", "previous_miscarriages_12_23w", "previous_miscarriages", "abruptio_placentae", "placenta_previa", "placental_weight", "weight_birth", "length_birth", "hc_birth", "perinatal_death", "spontaneous_delivery", "eclampsia_total", "preeclampsia", "early_preeclampsia", "preeclampsia_serious", "preeclampsia_quant", "pregnancy_hellp", "z_placental_weight_pregnancy_duration", "z_placental_weight", "z_weight_birth_pregnancy_duration", "z_weight_birth", "z_hc_birth_length_birth", "z_hc_birth", "z_hc_birth_weight_birth", "z_placental_weight_weight_birth")
+
+lm_coefs_mother <- list()
+
+for (phenotype_i in 1:length(phenotypes)) {
+  
+  phenotype <- phenotypes[phenotype_i]
+  
+  print(glue("{Sys.time()} - Association for {phenotype} ({phenotype_i} of {length(phenotypes)})"))
+  
+  for (term in 0:2) {
+    
+    if (term != 2) {
+      
+      genotypes_mothers_phenotypes <- genotypes_mothers %>% 
+        inner_join(
+          pheno_child_genotyped_unrelated %>% 
+            filter(
+              pregnancy_duration_term == term & !is.na(mother_sentrix_id)
+            ) %>% 
+            select(
+              iid = mother_sentrix_id,
+              !!sym(phenotype)
+            ),
+          by = "iid"
+        )
+      
+    } else {
+      
+      genotypes_mothers_phenotypes <- genotypes_mothers %>% 
+        inner_join(
+          pheno_child_genotyped_unrelated %>% 
+            filter(
+              !is.na(mother_sentrix_id)
+            ) %>% 
+            select(
+              iid = mother_sentrix_id,
+              !!sym(phenotype)
+            ),
+          by = "iid"
+        )
+      
+    }
+    
+    variants <- unique(genotypes_mothers$plink_id)
+    
+    for (variant_i in 1:length(variants)) { 
+      
+      variant_id <- variants[variant_i]
+      
+      temp_df <- lm_function(
+        plink_id = variant_id,
+        snp_data = genotypes_mothers_phenotypes,
+        pheno = phenotype
+      )
+      
+      temp_df$pregnancy_term <- term_levels[term + 1]
+      
+      lm_coefs_mother[[length(lm_coefs_mother) + 1]] <- temp_df
+      
+    }
+  }
+}
+
+lm_coefs_mother <- do.call(rbind, lm_coefs_mother)
+
+lm_coefs_mother <- lm_coefs_mother %>% 
+   separate(
+     plink_id, 
+     into = c("id", "allele"), 
+     extra = "drop", 
+     remove = F
+     ) %>% 
+  mutate(
+    allele = toupper(allele)
+  )
+
+write.table(
+  lm_coefs_mother,
+  file = gzfile("tables/top_hits_association_other_phenotypes.gz"),
+  sep = " \t",
+  col.names = T,
+  row.names = T
+)
+
+```
+
+Effect size comparison
+
+```{r}
+
+meta_results <- read.table(
+  file = "utils/top_hits_proxies",
+  header = T
+) %>% 
+  mutate(
+    id = ifelse(is.na(proxy), snp, proxy),
+    allele_meta = ifelse(is.na(proxy), a1, proxy_a1),
+  ) %>% 
+  filter(
+    !id %in% c("rs184084750", "rs34935290")
+  )
+
+for (phenotype_i in 1:length(phenotypes)) {
+  
+  pheno_name <- phenotypes[phenotype_i]
+  
+  print(glue("{Sys.time()} - Association for {phenotype} ({phenotype_i} of {length(phenotypes)})"))
+
+plot_data <- lm_coefs_mother %>% 
+  filter(
+    phenotype == pheno_name
+  ) %>% 
+  select(
+    id, allele, beta, se, p
+  ) %>% 
+  left_join(
+    meta_results %>% 
+      select(
+        id, allele_meta, beta_meta = beta, se_meta = se, p_meta = p
+      ),
+    by = "id"
+  ) %>% 
+  mutate(
+    beta_swapped = ifelse(allele != allele_meta, -beta, beta)
+  )
+
+plot <- ggplot(
+  data = plot_data
+) +
+  geom_hline(
+    yintercept = 0
+  ) +
+  geom_vline(
+    xintercept = 0
+  ) +
+  geom_abline(
+    slope = 1,
+    intercept = 0,
+    linetype = "dotted"
+  ) +
+  geom_segment(
+    mapping = aes(
+      x = beta_meta - qnorm(0.975) * se_meta,
+      xend = beta_meta + qnorm(0.975) * se_meta,
+      y = beta_swapped,
+      yend = beta_swapped
+    ),
+    color = "grey40"
+  ) +
+  geom_segment(
+    mapping = aes(
+      x = beta_meta,
+      xend = beta_meta,
+      y = beta_swapped - qnorm(0.975) * se_meta,
+      yend = beta_swapped + qnorm(0.975) * se_meta
+    ),
+    color = "grey40"
+  ) +
+  geom_point(
+    mapping = aes(
+      x = beta_meta,
+      y = beta_swapped
+    )
+  ) +
+  scale_x_continuous(
+    name = "Meta [beta 95% CI]"
+  ) +
+  scale_y_continuous(
+    name = glue("{pheno_name} in MoBa [beta 95% CI]")
+  )
+  
+  png(
+    filename = glue("plots/{phenotype}_moba_vs_meta.png"),
+    width = 600,
+    height = 600
+  )
+  grid.draw(plot)
+  device <- dev.off()
+  
+}
 
 ```
