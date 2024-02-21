@@ -218,7 +218,8 @@ standardizeBySex <- function(
         formula = formula,
         sigma.formula = sigmaFormula,
         family = family,
-        data = maleTrainingDF
+        data = maleTrainingDF, 
+        trace = 0
     )
     
     if (sum(is.na(maleModel[[coefficients]])) > 0) {
@@ -227,7 +228,8 @@ standardizeBySex <- function(
         formula = formula2,
         sigma.formula = sigmaFormula2,
         family = family,
-        data = maleTrainingDF
+        data = maleTrainingDF, 
+        trace = 0
       )
       
     }
@@ -250,7 +252,8 @@ standardizeBySex <- function(
         formula = formula,
         sigma.formula = sigmaFormula,
         family = family,
-        data = femaleTrainingDF
+        data = femaleTrainingDF, 
+        trace = 0
     )
     
     if (sum(is.na(femaleModel[[coefficients]])) > 0) {
@@ -259,7 +262,8 @@ standardizeBySex <- function(
         formula = formula2,
         sigma.formula = sigmaFormula2,
         family = family,
-        data = femaleTrainingDF
+        data = femaleTrainingDF, 
+        trace = 0
       )
       
     }

@@ -6,7 +6,7 @@ editor: visual
 
 ## Look up of top SNPs
 
-*Look up of bona fide* variants in the GWAS files.
+Look up of *bona fide* variants in the GWAS files.
 
 ### Libraries and settings
 

@@ -41,13 +41,13 @@ Load phenotypes
 ```{r}
 
 unrelated_mothers <- read.table(
-  file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_23-05-28/id/mothers_id_unrelated",
+  file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_24-01-16/id/mothers_id_unrelated",
   header = T,
   sep = "\t"
 )
 
 unrelated_children <- read.table(
-  file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_23-05-28/id/children_id_unrelated",
+  file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_24-01-16/id/children_id_unrelated",
   header = T,
   sep = "\t"
 )
@@ -63,6 +63,74 @@ mfr_data <- read.table(
   header = T,
   sep = "\t"
 )
+
+parents_data <- read.table(
+  file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_24-01-16/parents.gz",
+  header = T,
+  sep = "\t"
+)
+
+mother_health_data <- read.table(
+  file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_24-01-16/mother_health.gz",
+  header = T,
+  sep = "\t"
+)
+
+```
+
+Clean parental anthropometrics
+
+```{r}
+
+i <- which(!is.na(parents_data$mother_weight_beginning_self) & parents_data$mother_weight_beginning_self > 200)
+parents_data$mother_weight_beginning_self[i] <- parents_data$mother_weight_beginning_self[i] / 10
+
+i <- which(!is.na(parents_data$mother_weight_beginning_self) & parents_data$mother_weight_beginning_self < 25)
+parents_data$mother_weight_beginning_self[i] <- NA
+
+i <- which(!is.na(parents_data$mother_weight_beginning_self) & parents_data$mother_weight_beginning_self > 150)
+parents_data$mother_weight_beginning_self[i] <- NA
+
+i <- which(!is.na(parents_data$mother_weight_15w) & parents_data$mother_weight_15w > 200)
+parents_data$mother_weight_15w[i] <- parents_data$mother_weight_15w[i] / 10
+
+i <- which(!is.na(parents_data$mother_weight_15w) & parents_data$mother_weight_15w < 25)
+parents_data$mother_weight_15w[i] <- NA
+
+i <- which(!is.na(parents_data$mother_weight_15w) & parents_data$mother_weight_15w > 150)
+parents_data$mother_weight_15w[i] <- NA
+
+i <- which(!is.na(parents_data$mother_weight_end) & parents_data$mother_weight_end > 250)
+parents_data$mother_weight_end[i] <- parents_data$mother_weight_end[i] / 10
+
+i <- which(!is.na(parents_data$mother_weight_end) & parents_data$mother_weight_end < 25)
+parents_data$mother_weight_end[i] <- NA
+
+i <- which(!is.na(parents_data$mother_height) & parents_data$mother_height < 150 & !is.na(parents_data$mother_median_height) & parents_data$mother_median_height > 150)
+parents_data$mother_height[i] <- parents_data$mother_median_height[i]
+
+i <- which(!is.na(parents_data$mother_height) & parents_data$mother_height < 125)
+parents_data$mother_height[i] <- NA
+
+parents_data$mother_bmi_beginning <- 10000 * parents_data$mother_weight_beginning_self / parents_data$mother_height ^ 2
+
+parents_data$mother_bmi_beginning_log <- log10(parents_data$mother_bmi_beginning)
+
+parents_data$mother_bmi_15w <- 10000 * parents_data$mother_weight_15w / parents_data$mother_height ^ 2
+
+parents_data$mother_bmi_15w_log <- log10(parents_data$mother_bmi_15w)
+
+parents_data$mother_bmi_end <- 10000 * parents_data$mother_weight_end / parents_data$mother_height ^ 2
+
+parents_data$mother_bmi_end_log <- log10(parents_data$mother_bmi_end)
+
+parents_data$mother_weight_gain_15w <- parents_data$mother_weight_15w -  parents_data$mother_weight_beginning_self
+
+parents_data$mother_weight_gain_15w_relative <- parents_data$mother_weight_gain_15w /  parents_data$mother_weight_beginning_self
+
+parents_data$mother_weight_gain_end <- parents_data$mother_weight_end -  parents_data$mother_weight_beginning_self
+
+parents_data$mother_weight_gain_end_relative <- parents_data$mother_weight_gain_end /  parents_data$mother_weight_beginning_self
 
 ```
 
@@ -130,6 +198,25 @@ birth_data <- mfr_data %>%
     child_id, child_sentrix_id, mother_sentrix_id, pregnancy_duration, n_previous_stillbirths, n_previous_live_births, previous_miscarriages_before_12w, previous_miscarriages_12_23w, previous_miscarriages, abruptio_placentae, placenta_previa, placental_weight, weight_birth, length_birth, hc_birth, perinatal_death, spontaneous_delivery, eclampsia_total, preeclampsia, early_preeclampsia, preeclampsia_serious, preeclampsia_quant, pregnancy_hellp
   )
 
+mother_data <- parents_data %>% 
+  select(
+    child_id, mother_age_at_menarche, mother_age_15w, mother_height, mother_weight_beginning_self, mother_weight_15w, mother_weight_end, 
+    mother_bmi_beginning, mother_bmi_15w, mother_bmi_end, 
+    mother_bmi_beginning_log, mother_bmi_15w_log, mother_bmi_end_log, 
+    mother_weight_gain_15w, mother_weight_gain_15w_relative, mother_weight_gain_end, mother_weight_gain_end_relative
+  )
+
+mother_health_data <- mother_health_data %>% 
+  mutate(
+    diabetes_before = ifelse(!is.na(diabetes_insulin_before) | !is.na(diabetes_no_insulin_before), 1, 0),
+    diabetes_during = ifelse(!is.na(diabetes_insulin_during) | !is.na(diabetes_no_insuling_during), 1, 0),
+    diabetes_during_not_before = ifelse(diabetes_during == 1 & diabetes_before == 0, 1, 0),
+    diabetes = ifelse(diabetes_during == 1 | diabetes_before == 1, 1, 0)
+  ) %>% 
+  select(
+    child_id, diabetes_before, diabetes_during, diabetes_during_not_before, diabetes
+  )
+
 pheno_data_child <- nvp_data %>% 
   left_join(
     birth_data %>% 
@@ -137,6 +224,14 @@ pheno_data_child <- nvp_data %>%
       -child_sentrix_id, -mother_sentrix_id
     ),
   by = "child_id"
+  ) %>% 
+  left_join(
+    mother_data,
+    by = "child_id"
+  ) %>% 
+  left_join(
+    mother_health_data,
+    by = "child_id"
   ) %>% 
   group_by(mother_id) %>% 
   slice_sample(n = 1)
@@ -154,6 +249,14 @@ pheno_child_genotyped_unrelated <- nvp_data %>%
       -mother_sentrix_id, -child_id
     ),
   by = "child_sentrix_id"
+  ) %>% 
+  left_join(
+    mother_data,
+    by = "child_id"
+  ) %>% 
+  left_join(
+    mother_health_data,
+    by = "child_id"
   )
 
 ```
@@ -548,7 +651,7 @@ Phenotypic association with NVP/HG
 
 ```{r}
 
-binary_phenotypes <- c("abruptio_placentae", "placenta_previa", "perinatal_death", "spontaneous_delivery", "early_preeclampsia", "preeclampsia", "pregnancy_hellp", "preeclampsia_serious")
+binary_phenotypes <- c("perinatal_death", "spontaneous_delivery", "hospitalized_pre_eclampsia", "early_preeclampsia", "preeclampsia", "preeclampsia_serious", "diabetes_before", "diabetes_during", "diabetes_during_not_before", "diabetes")
 
 term_levels = c("<37w", ">=37w", "All")
 
@@ -711,7 +814,7 @@ write.table(
   row.names = T
 )
 
-numeric_phenotypes <- c("n_previous_stillbirths", "n_previous_live_births", "previous_miscarriages", "pregnancy_duration", "placental_weight", "z_placental_weight", "z_placental_weight_pregnancy_duration", "weight_birth", "z_weight_birth", "z_weight_birth_pregnancy_duration", "hc_birth", "z_hc_birth", "z_hc_birth_length_birth", "z_hc_birth_weight_birth", "z_placental_weight_weight_birth", "preeclampsia_quant")
+numeric_phenotypes <- c("n_previous_stillbirths", "n_previous_live_births", "previous_miscarriages", "previous_miscarriages_before_12w", "previous_miscarriages_12_23w", "pregnancy_duration", "placental_weight", "z_placental_weight", "z_placental_weight_pregnancy_duration", "weight_birth", "z_weight_birth", "z_weight_birth_pregnancy_duration", "hc_birth", "z_hc_birth", "z_hc_birth_length_birth", "z_hc_birth_weight_birth", "z_placental_weight_weight_birth", "preeclampsia_quant", "mother_age_at_menarche", "mother_age_15w", "mother_height", "mother_weight_beginning_self", "mother_weight_15w", "mother_weight_end", "mother_bmi_beginning", "mother_bmi_15w", "mother_bmi_end", "mother_bmi_beginning_log", "mother_bmi_15w_log", "mother_bmi_end_log", "mother_weight_gain_15w", "mother_weight_gain_15w_relative", "mother_weight_gain_end", "mother_weight_gain_end_relative")
 
 t_results <- list()
 
@@ -982,7 +1085,7 @@ lm_function <- function(plink_id, snp_data, pheno) {
   
 }
 
-phenotypes <- c("hospitalized_pre_eclampsia", "nausea_vomiting", "nausea_vomiting_hg", "pregnancy_duration", "n_previous_stillbirths", "n_previous_live_births", "previous_miscarriages_before_12w", "previous_miscarriages_12_23w", "previous_miscarriages", "abruptio_placentae", "placenta_previa", "placental_weight", "weight_birth", "length_birth", "hc_birth", "perinatal_death", "spontaneous_delivery", "preeclampsia", "early_preeclampsia", "preeclampsia_serious", "preeclampsia_quant", "pregnancy_hellp", "z_placental_weight_pregnancy_duration", "z_placental_weight", "z_weight_birth_pregnancy_duration", "z_weight_birth", "z_hc_birth_length_birth", "z_hc_birth", "z_hc_birth_weight_birth", "z_placental_weight_weight_birth")
+phenotypes <- c("perinatal_death", "spontaneous_delivery", "hospitalized_pre_eclampsia", "early_preeclampsia", "preeclampsia", "preeclampsia_serious", "diabetes_before", "diabetes_during", "diabetes_during_not_before", "diabetes", "n_previous_stillbirths", "n_previous_live_births", "previous_miscarriages", "previous_miscarriages_before_12w", "previous_miscarriages_12_23w", "pregnancy_duration", "placental_weight", "z_placental_weight", "z_placental_weight_pregnancy_duration", "weight_birth", "z_weight_birth", "z_weight_birth_pregnancy_duration", "hc_birth", "z_hc_birth", "z_hc_birth_length_birth", "z_hc_birth_weight_birth", "z_placental_weight_weight_birth", "preeclampsia_quant", "mother_age_at_menarche", "mother_age_15w", "mother_height", "mother_weight_beginning_self", "mother_weight_15w", "mother_weight_end", "mother_bmi_beginning", "mother_bmi_15w", "mother_bmi_end", "mother_bmi_beginning_log", "mother_bmi_15w_log", "mother_bmi_end_log", "mother_weight_gain_15w", "mother_weight_gain_15w_relative", "mother_weight_gain_end", "mother_weight_gain_end_relative")
 
 lm_coefs_mother <- list()
 
@@ -1256,7 +1359,7 @@ lm_function <- function(snp_data, pheno) {
       beta = lm_summary$coef["meta_score", "Estimate"],
       se = lm_summary$coef["meta_score", "Std. Error"],
       p = lm_summary$coef["meta_score", "Pr(>|z|)"],
-      n = nrow(variant_data),
+      n = nrow(model_data),
       stringsAsFactors = F
     )
     
@@ -1405,6 +1508,24 @@ MR with GDF15
 
 ```{r}
 
+exposure_data <- data.frame(
+  SNP = c("rs1058587"),
+  beta.exposure = c(0.2783),
+  se.exposure = c(0.0181),
+  effect_allele.exposure = c("C"),
+  other_allele.exposure = c("G"),
+  eaf.exposure = c(0.748)
+)
+
+outcome_data <- data.frame(
+  SNP = c("rs1058587"),
+  beta.outcome = c(),
+  se.outcome = c(),
+  effect_allele.outcome = c(),
+  other_allele.outcome = c(),
+  eaf.outcome = c(),
+  outcome = c()
+)
 
 
 ```
