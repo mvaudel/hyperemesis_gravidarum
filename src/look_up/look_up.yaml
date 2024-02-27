@@ -3,27 +3,25 @@
 variants:
   - rs56337209
   - rs9312688
-  - rs34935290
+  - rs10073299
   - rs10948901
-  - rs76856932
-  - rs12790159
-  - rs7948940
+  - rs112255166
   - rs7101406
+  - rs12790159
   - rs17077610
   - rs1058587
   - rs5994661
 
 
 loci:
-  - LSAMP-IGSF11
-  - IGFBP7-ADGRL3
-  - CDH9
+  - IGSF11
+  - IGFBP7
+  - CDH9?
   - GFRAL
-  - CYLC2-SMC2
   - TCF7L2-HABP2
-  - PGR-TRPC6
-  - KCNA4-FSHB
-  - SLITRK1-SLITRK6
+  - FSHB
+  - PGR/TRPC6
+  - SLITRK1
   - GDF15
   - SYN3
 
