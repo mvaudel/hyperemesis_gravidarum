@@ -61,7 +61,7 @@ look_up_ids <- unique(look_up_data$id)
 
 write.table(
   look_up_ids,
-  file = "resources/look_up_ids_23-07-21",
+  file = "resources/look_up_ids_24-02-24",
   col.names = F,
   row.names = F,
   quote = F
