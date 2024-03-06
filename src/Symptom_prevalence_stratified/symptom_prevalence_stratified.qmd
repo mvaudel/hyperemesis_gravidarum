@@ -1,0 +1,729 @@
+---
+title: "Symptom_prevalence_stratified"
+format: gfm
+editor: visual
+---
+
+# Symptom prevalence stratified by hospitalization status
+
+This document browses the phenotypes associated with Hyperemesis Gravidarum in MoBa.
+
+### Libraries and settings
+
+```{r}
+
+library(conflicted)
+library(janitor)
+library(glue)
+library(tidyverse)
+library(ggplot2)
+library(scico)
+library(gghalves)
+library(ggside)
+
+# Solve name space conflicts
+conflicts_prefer(dplyr::filter)
+
+# General parameters
+theme_set(theme_bw(base_size = 14))
+
+```
+
+### Phenotypes
+
+```{r}
+
+pregnancy <- read.table(
+  file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_23-07-12/pregnancy.gz",
+  header = T,
+  sep = "\t"
+)
+
+
+```
+
+### Formatting
+
+```{r}
+
+phenotypes <- pregnancy %>% 
+  mutate(
+    nausea_any = ifelse(!is.na(nausea_before_4w) | !is.na(nausea_5w_8w) | !is.na(nausea_9w_12w) | !is.na(nausea_13w_15w) | !is.na(nausea_13w_16w) | !is.na(nausea_17w_20w) | !is.na(nausea_21w_24w) | !is.na(nausea_25w_28w) | !is.na(nausea_after_29w), 1, NA),
+    vomiting_any = ifelse(!is.na(vomiting_before_4w) | !is.na(vomiting_5w_8w) | !is.na(vomiting_9w_12w) | !is.na(vomiting_13w_15w), 1, NA),
+    long_term_nausea_vomiting_any = ifelse(!is.na(long_term_nausea_vomiting_13w_16w) | !is.na(long_term_nausea_vomiting_17w_20w) | !is.na(long_term_nausea_vomiting_21w_24w) | !is.na(long_term_nausea_vomiting_25w_28w) | !is.na(long_term_nausea_vomiting_after_29w), 1, NA),
+    nausea_duration = ifelse(is.na(nausea_week_most_bothered_from_q2) | is.na(nausea_week_most_bothered_to_q2) | nausea_week_most_bothered_to_q2 < nausea_week_most_bothered_from_q2, NA, nausea_week_most_bothered_to_q2 - nausea_week_most_bothered_from_q2),
+    vomiting_duration = ifelse(is.na(vomiting_week_from_q2) | is.na(vomiting_week_to_q2) | vomiting_week_to_q2 < vomiting_week_from_q2, NA, vomiting_week_to_q2 - vomiting_week_from_q2)
+  )
+
+```
+
+### Summary tables
+
+```{r}
+
+categorical_columns <- c(
+  "nausea_any",
+    "nausea_before_4w",
+  "nausea_5w_8w",
+  "nausea_9w_12w",
+  "nausea_13w_15w",
+  "nausea_13w_16w",
+  "nausea_17w_20w",
+  "nausea_21w_24w",
+  "nausea_25w_28w",
+  "nausea_after_29w",
+  "vomiting_any",
+  "vomiting_before_4w",
+  "vomiting_5w_8w",
+  "vomiting_9w_12w",
+  "vomiting_13w_15w",
+  "long_term_nausea_vomiting_any",
+  "long_term_nausea_vomiting_13w_16w",
+  "long_term_nausea_vomiting_17w_20w",
+  "long_term_nausea_vomiting_21w_24w",
+  "long_term_nausea_vomiting_25w_28w",
+  "long_term_nausea_vomiting_after_29w"
+  )
+
+n_total <- c()
+n_hospitalized <- c()
+
+for (i in 1:length(categorical_columns)) {
+  
+  outcome <- categorical_columns[i]
+  
+  n_total[i] <- sum(!is.na(phenotypes[[outcome]]))
+  n_hospitalized[i] <- sum(!is.na(phenotypes[[outcome]][!is.na(phenotypes$hospitalized_prolonged_nausea_vomiting) & phenotypes$hospitalized_prolonged_nausea_vomiting == 1]))
+  
+}
+
+n_df <- data.frame(
+  variable = outcome_columns,
+  n_hospitalized = n_hospitalized,
+  n_total = n_total
+)
+
+write.table(
+  x = n_df,
+  file = gzfile("n.gz"),
+  col.names = T,
+  row.names = F,
+  quote = F
+)
+
+
+numerical_columns <- c(
+  "nausea_week_most_bothered_from_q2",
+  "nausea_week_most_bothered_to_q2",
+  "nausea_duration",
+  "vomiting_week_from_q2",
+  "vomiting_week_to_q2",
+  "vomiting_duration"
+)
+
+n_total <- c()
+n_hospitalized <- c()
+mean_total <- c()
+mean_hospitalized <- c()
+sd_total <- c()
+sd_hospitalized <- c()
+q5_total <- c()
+q5_hospitalized <- c()
+q25_total <- c()
+q25_hospitalized <- c()
+q50_total <- c()
+q50_hospitalized <- c()
+q75_total <- c()
+q75_hospitalized <- c()
+q95_total <- c()
+q95_hospitalized <- c()
+
+
+for (i in 1:length(numerical_columns)) {
+  
+  outcome <- numerical_columns[i]
+  
+  values <- phenotypes[[outcome]][!is.na(phenotypes[[outcome]])]
+  quantiles <- quantile(
+    x = values,
+    probs = c(0.05, 0.25, 0.50, 0.75, 0.95)
+  )
+  values_hospitalized <- phenotypes[[outcome]][!is.na(phenotypes[[outcome]]) & !is.na(phenotypes$hospitalized_prolonged_nausea_vomiting) & phenotypes$hospitalized_prolonged_nausea_vomiting == 1]
+  quantiles_hospitalized <- quantile(
+    x = values_hospitalized,
+    probs = c(0.05, 0.25, 0.50, 0.75, 0.95)
+  )
+  
+  n_total[i] <- length(values)
+  n_hospitalized[i] <- length(values_hospitalized)
+  mean_total[i] <- mean(values)
+  mean_hospitalized[i] <- mean(values_hospitalized)
+  sd_total[i] <- sd(values)
+  sd_hospitalized[i] <- sd(values_hospitalized)
+  q5_total[i] <- quantiles_phenotypes[1]
+  q5_hospitalized[i] <- quantiles_hospitalized[1]
+  q25_total[i] <- quantiles_phenotypes[2]
+  q25_hospitalized[i] <- quantiles_hospitalized[2]
+  q50_total[i] <- quantiles_phenotypes[3]
+  q50_hospitalized[i] <- quantiles_hospitalized[3]
+  q75_total[i] <- quantiles_phenotypes[4]
+  q75_hospitalized[i] <- quantiles_hospitalized[4]
+  q95_total[i] <- quantiles_phenotypes[5]
+  q95_hospitalized[i] <- quantiles_hospitalized[5]
+  
+}
+
+q_df <- data.frame(
+  variable = numerical_columns,
+  n_total = n_total,
+  n_hospitalized = n_hospitalized,
+  mean_total = mean_total,
+  mean_hospitalized = mean_hospitalized,
+  sd_total = sd_total,
+  sd_hospitalized = sd_hospitalized,
+  q5_total = q5_total,
+  q5_hospitalized = q5_hospitalized,
+  q25_total = q25_total,
+  q25_hospitalized = q25_hospitalized,
+  q50_total = q50_total,
+  q50_hospitalized = q50_hospitalized,
+  q75_total = q75_total,
+  q75_hospitalized = q75_hospitalized,
+  q95_total = q95_total,
+  q95_hospitalized = q95_hospitalized
+)
+
+write.table(
+  x = q_df,
+  file = gzfile("q.gz"),
+  col.names = T,
+  row.names = F,
+  quote = F
+)
+
+
+
+```
+
+# Plot from / to
+
+```{r}
+
+
+nausea_vomiting_from_to <- data.frame(
+  phenotype = rep(c("Nausea from", "Nausea to", "Vomiting from", "Vomiting to"), each = nrow(phenotypes)),
+  week = c(phenotypes$nausea_week_most_bothered_from_q2, phenotypes$nausea_week_most_bothered_to_q2, phenotypes$vomiting_week_from_q2, phenotypes$vomiting_week_to_q2),
+  hospitalized = c(phenotypes$hospitalized_prolonged_nausea_vomiting, phenotypes$hospitalized_prolonged_nausea_vomiting, phenotypes$hospitalized_prolonged_nausea_vomiting, phenotypes$hospitalized_prolonged_nausea_vomiting)
+) %>% 
+  mutate(
+    phenotype_factor = factor(phenotype, levels = c("Nausea from", "Vomiting from", "Nausea to", "Vomiting to")),
+    hospitalized = ifelse(is.na(hospitalized), 0, hospitalized)
+  ) %>% 
+  filter(
+    week < 37
+  )
+
+data_hospitalized <- nausea_vomiting_from_to %>% 
+    filter(
+      hospitalized == 1
+    )
+
+ggplot() +
+  geom_half_violin(
+  data = nausea_vomiting_from_to,
+    mapping = aes(
+      x = phenotype_factor,
+      y = week
+    ),
+    fill = "grey80",
+    col = "grey20",
+      side = "l"
+  ) +
+  geom_half_boxplot(
+  data = nausea_vomiting_from_to,
+    mapping = aes(
+      x = phenotype_factor,
+      y = week
+    ),
+    fill = "grey95",
+    col = "grey20",
+      side = "l",
+  width = 0.1,
+  outlier.shape = NA,
+  errorbar.draw = F
+  ) +
+  geom_half_violin(
+  data = data_hospitalized,
+    mapping = aes(
+      x = phenotype_factor,
+      y = week
+    ),
+    fill = "darkred",
+    col = "grey20",
+      side = "r"
+  ) +
+  geom_half_boxplot(
+  data = data_hospitalized,
+    mapping = aes(
+      x = phenotype_factor,
+      y = week
+    ),
+    fill = "grey95",
+    col = "grey20",
+      side = "r",
+  width = 0.1,
+  outlier.shape = NA,
+  errorbar.draw = F
+  ) + 
+  annotate(
+    "text",
+    label = "All pregnancies",
+    x = 0.95,
+    y = 36,
+    angle = 90,
+    hjust = 1,
+    vjust = 0,
+    col = "black"
+  ) + 
+  annotate(
+    "text",
+    label = "Hospitalized",
+    x = 1.05,
+    y = 36,
+    angle = 90,
+    hjust = 1,
+    vjust = 1,
+    col = "darkred"
+  ) +
+  scale_y_continuous(
+    name = "Week"
+    ) +
+  theme(
+    axis.title.x = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+```
+
+# Plot duration
+
+```{r}
+
+
+nausea_vomiting_duration <- data.frame(
+  phenotype = rep(c("Nausea duration", "Vomiting duration"), each = nrow(phenotypes)),
+  week = c(phenotypes$nausea_duration, phenotypes$vomiting_duration),
+  hospitalized = c(phenotypes$hospitalized_prolonged_nausea_vomiting, phenotypes$hospitalized_prolonged_nausea_vomiting)
+) %>% 
+  mutate(
+    phenotype_factor = factor(phenotype, levels = rev(c("Nausea duration", "Vomiting duration"))),
+    hospitalized = ifelse(is.na(hospitalized), 0, hospitalized)
+  ) %>% 
+  filter(
+    week < 37
+  )
+
+
+data_hospitalized <- nausea_vomiting_duration %>% 
+    filter(
+      hospitalized == 1
+    )
+
+ggplot() +
+  geom_half_violin(
+  data = nausea_vomiting_duration,
+    mapping = aes(
+      x = phenotype_factor,
+      y = week
+    ),
+    fill = "grey80",
+    col = "grey20",
+      side = "l"
+  ) +
+  geom_half_boxplot(
+  data = nausea_vomiting_duration,
+    mapping = aes(
+      x = phenotype_factor,
+      y = week
+    ),
+    fill = "grey95",
+    col = "grey20",
+      side = "l",
+  width = 0.2,
+  outlier.shape = NA,
+  errorbar.draw = F
+  ) +
+  geom_half_violin(
+  data = data_hospitalized,
+    mapping = aes(
+      x = phenotype_factor,
+      y = week
+    ),
+    fill = "darkred",
+    col = "grey20",
+      side = "r"
+  ) +
+  geom_half_boxplot(
+  data = data_hospitalized,
+    mapping = aes(
+      x = phenotype_factor,
+      y = week
+    ),
+    fill = "grey95",
+    col = "grey20",
+      side = "r",
+  width = 0.2,
+  outlier.shape = NA,
+  errorbar.draw = F
+  ) + 
+  annotate(
+    "text",
+    label = "All pregnancies",
+    x = 0.95,
+    y = 36,
+    angle = 90,
+    hjust = 1,
+    vjust = 0,
+    col = "black"
+  ) + 
+  annotate(
+    "text",
+    label = "Hospitalized",
+    x = 1.05,
+    y = 36,
+    angle = 90,
+    hjust = 1,
+    vjust = 1,
+    col = "darkred"
+  ) +
+  scale_y_continuous(
+    name = "Week"
+    ) +
+  theme(
+    axis.title.x = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+```
+
+### Plot Nausea
+
+```{r}
+
+plot_variables <- c("nausea_any", "nausea_before_4w", "nausea_5w_8w", "nausea_9w_12w", "nausea_13w_15w", "nausea_13w_16w", "nausea_17w_20w", "nausea_21w_24w", "nausea_25w_28w")
+plot_labels <- c("Any", "0 - 4", "5 - 8", "9 - 12", "13 - 15", "13 - 16", "17 - 20", "21 - 24", "25 - 28")
+
+plot_data <- n_df %>% 
+  filter(
+    variable %in% plot_variables
+  ) %>% 
+  mutate(
+    variable_factor = factor(variable, plot_variables),
+    hospitalization_rate = 100 * n_hospitalized / n_total
+  )
+
+levels(plot_data$variable_factor) <- plot_labels
+
+ggplot(
+  data = plot_data
+) +
+  geom_col(
+    mapping = aes(
+      x = variable_factor,
+      y = n_total
+    ),
+    fill = "grey80",
+    col = "grey20"
+  ) +
+  scale_x_discrete(
+    name = "Week"
+  ) +
+  scale_y_continuous(
+    name = "Number of pregnancies",
+    expand = expansion(
+      mult = c(0, 0.05)
+      )
+  ) + 
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+
+
+```
+
+```{r}
+
+ggplot(
+  data = plot_data
+) +
+  geom_col(
+    mapping = aes(
+      x = variable_factor,
+      y = n_hospitalized
+    ),
+    fill = "darkred",
+    col = "grey20"
+  ) +
+  scale_x_discrete(
+    name = "Week"
+  ) +
+  scale_y_continuous(
+    name = "Number of pregnancies",
+    expand = expansion(
+      mult = c(0, 0.05)
+      )
+  ) + 
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+```
+
+```{r}
+
+ggplot(
+  data = plot_data
+) +
+  geom_col(
+    mapping = aes(
+      x = variable_factor,
+      y = hospitalization_rate
+    ),
+    fill = "darkblue",
+    col = "grey20"
+  ) +
+  scale_x_discrete(
+    name = "Week"
+  ) +
+  scale_y_continuous(
+    name = "Pregancies with symptoms hospitalized [%]",
+    expand = expansion(
+      mult = c(0, 0.05)
+      )
+  ) + 
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+```
+
+### Plot vomiting
+
+```{r}
+
+plot_variables <- c("vomiting_any", "vomiting_before_4w", "vomiting_5w_8w", "vomiting_9w_12w", "vomiting_13w_15w")
+plot_labels <- c("Any", "0 - 4", "5 - 8", "9 - 12", "13 - 15")
+
+plot_data <- n_df %>% 
+  filter(
+    variable %in% plot_variables
+  ) %>% 
+  mutate(
+    variable_factor = factor(variable, plot_variables),
+    hospitalization_rate = 100 * n_hospitalized / n_total
+  )
+
+levels(plot_data$variable_factor) <- plot_labels
+
+ggplot(
+  data = plot_data
+) +
+  geom_col(
+    mapping = aes(
+      x = variable_factor,
+      y = n_total
+    ),
+    fill = "grey80",
+    col = "grey20"
+  ) +
+  scale_x_discrete(
+    name = "Week"
+  ) +
+  scale_y_continuous(
+    name = "Number of pregnancies",
+    expand = expansion(
+      mult = c(0, 0.05)
+      )
+  ) + 
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+
+
+```
+
+```{r}
+
+ggplot(
+  data = plot_data
+) +
+  geom_col(
+    mapping = aes(
+      x = variable_factor,
+      y = n_hospitalized
+    ),
+    fill = "darkred",
+    col = "grey20"
+  ) +
+  scale_x_discrete(
+    name = "Week"
+  ) +
+  scale_y_continuous(
+    name = "Number of pregnancies",
+    expand = expansion(
+      mult = c(0, 0.05)
+      )
+  ) + 
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+```
+
+```{r}
+
+ggplot(
+  data = plot_data
+) +
+  geom_col(
+    mapping = aes(
+      x = variable_factor,
+      y = hospitalization_rate
+    ),
+    fill = "darkblue",
+    col = "grey20"
+  ) +
+  scale_x_discrete(
+    name = "Week"
+  ) +
+  scale_y_continuous(
+    name = "Pregancies with symptoms hospitalized [%]",
+    expand = expansion(
+      mult = c(0, 0.05)
+      )
+  ) + 
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+```
+
+
+### Plot long term nausea vomiting
+
+```{r}
+
+plot_variables <- c("long_term_nausea_vomiting_any", "long_term_nausea_vomiting_13w_16w", "long_term_nausea_vomiting_17w_20w", "long_term_nausea_vomiting_21w_24w", "long_term_nausea_vomiting_25w_28w", "long_term_nausea_vomiting_after_29w")
+plot_labels <- c("Any", "13 - 16", "17 - 20", "21 - 24", "25 - 28", "After 29")
+
+plot_data <- n_df %>% 
+  filter(
+    variable %in% plot_variables
+  ) %>% 
+  mutate(
+    variable_factor = factor(variable, plot_variables),
+    hospitalization_rate = 100 * n_hospitalized / n_total
+  )
+
+levels(plot_data$variable_factor) <- plot_labels
+
+ggplot(
+  data = plot_data
+) +
+  geom_col(
+    mapping = aes(
+      x = variable_factor,
+      y = n_total
+    ),
+    fill = "grey80",
+    col = "grey20"
+  ) +
+  scale_x_discrete(
+    name = "Week"
+  ) +
+  scale_y_continuous(
+    name = "Number of pregnancies",
+    expand = expansion(
+      mult = c(0, 0.05)
+      )
+  ) + 
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+
+
+```
+
+```{r}
+
+ggplot(
+  data = plot_data
+) +
+  geom_col(
+    mapping = aes(
+      x = variable_factor,
+      y = n_hospitalized
+    ),
+    fill = "darkred",
+    col = "grey20"
+  ) +
+  scale_x_discrete(
+    name = "Week"
+  ) +
+  scale_y_continuous(
+    name = "Number of pregnancies",
+    expand = expansion(
+      mult = c(0, 0.05)
+      )
+  ) + 
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+```
+
+
+```{r}
+
+ggplot(
+  data = plot_data
+) +
+  geom_col(
+    mapping = aes(
+      x = variable_factor,
+      y = hospitalization_rate
+    ),
+    fill = "darkblue",
+    col = "grey20"
+  ) +
+  scale_x_discrete(
+    name = "Week"
+  ) +
+  scale_y_continuous(
+    name = "Pregancies with symptoms hospitalized [%]",
+    expand = expansion(
+      mult = c(0, 0.05)
+      )
+  ) + 
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  )
+
+```
+
+
+

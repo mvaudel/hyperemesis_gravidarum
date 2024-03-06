@@ -104,7 +104,7 @@ vomiting_columns <- c(
   "vomiting_any",
   "vomiting_before_4w",
   "vomiting_5w_8w",
-  "vaginal_thrush_9w_12w",
+  "vomiting_9w_12w",
   "vomiting_13w_15w"
   )
 
