@@ -39,10 +39,11 @@ theme_set(theme_bw(base_size = 14))
 
 config = read_yaml("look_up.yaml")
 
-
 # Locus names
-loci = config$loci
-names(loci) = config$variants
+variants_details = read.table(
+  file = "resources/look_up_snps_24.06.05",
+  
+)
 
 # Summary stats
 

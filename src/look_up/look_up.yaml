@@ -1,32 +1,7 @@
 # Parameters for the pipeline.
 
-variants:
-  - rs56337209
-  - rs9312688
-  - rs10073299
-  - rs10948901
-  - rs112255166
-  - rs7101406
-  - rs12790159
-  - rs17077610
-  - rs1058587
-  - rs5994661
-
-
-loci:
-  - IGSF11
-  - IGFBP7
-  - CDH9?
-  - GFRAL
-  - TCF7L2-HABP2
-  - FSHB
-  - PGR/TRPC6
-  - SLITRK1
-  - GDF15
-  - SYN3
-
-
 gwas_version: 23-07-21
+look_up_version: 24-06-05
 
 analyses:
   hyperemesis_gravidarum_vs_all:

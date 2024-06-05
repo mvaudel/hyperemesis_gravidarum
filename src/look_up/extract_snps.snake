@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 
 ##
 #
@@ -12,13 +13,21 @@ import os
 config_file = 'src/look_up/look_up.yaml'
 configfile: config_file
 
-variants = config["variants"]
+variants_file = 'src/look_up/resources/look_up_snps_24.06.05'
+data_frame = pd.read_csv(
+    variants_file,
+    sep = '\t',
+    header = 0,
+    na_values = ['NA']
+)
+variants = config["id"]
 variants_string = "|".join(variants)
 
 analyses = config["analyses"]
 analyses_names = list(analyses.keys())
 
 gwas_version = config["gwas_version"]
+look_up_version = config["look_up_version"]
 
 regenie_folder = work_folder = os.path.join('/mnt/work/marc/moba/hyperemesis_gravidarum', gwas_version, 'results')
 results_folder = "src/look_up/resources"
@@ -55,7 +64,7 @@ print(f"Extracting {variants} in {analyses_names}.")
 rule all:
     'The final output rule'
     input:
-        output_file = os.path.join(results_folder, f"look_up_merged_{gwas_version}.gz")
+        output_file = os.path.join(results_folder, f"look_up_merged_{look_up_version}.gz")
 
 
 rule extract_snps:
@@ -65,11 +74,11 @@ rule extract_snps:
     params:
         variants_string = variants_string
     output:
-        regenie_file = os.path.join(results_folder, '{analysis}', "pop_{population}_pheno_{phenotype}.txt")
+        look_up_file = os.path.join(results_folder, '{analysis}', "pop_{population}_pheno_{phenotype}.txt")
     threads: 1
     shell:
         """
-        zcat {input.regenie_file} | awk 'NR==1 || $0 ~ /{params.variants_string}/' > {output.regenie_file}
+        zcat {input.regenie_file} | awk 'NR==1 || $0 ~ /{params.variants_string}/' > {output.look_up_file}
         """
 
 rule merge_wlm:
@@ -80,7 +89,7 @@ rule merge_wlm:
         look_up_folder = results_folder,
         config_file = config_file
     output:
-        output_file = os.path.join(results_folder, f"look_up_merged_{gwas_version}.gz")
+        output_file = os.path.join(results_folder, f"look_up_merged_{look_up_version}.gz")
     conda:
         "envs/r_merge_wlm.yaml"
     threads: 1
