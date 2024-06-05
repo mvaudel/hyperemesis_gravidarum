@@ -14,13 +14,13 @@ config_file = 'src/look_up/look_up.yaml'
 configfile: config_file
 
 variants_file = 'src/look_up/resources/look_up_snps_24.06.05'
-data_frame = pd.read_csv(
+variants_data = pd.read_csv(
     variants_file,
     sep = '\t',
     header = 0,
     na_values = ['NA']
 )
-variants = config["id"]
+variants = variants_data["id"]
 variants_string = "|".join(variants)
 
 analyses = config["analyses"]
