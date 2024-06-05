@@ -60,7 +60,7 @@ def get_output():
 
 ############################## RULES ###########################################
 
-print(f"Extracting {variants} in {analyses_names}.")
+print(f"Extracting {variants_string} in {analyses_names}.")
 rule all:
     'The final output rule'
     input:
