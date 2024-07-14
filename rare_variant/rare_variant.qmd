@@ -1,0 +1,173 @@
+---
+title: "rare_variant"
+format: gfm
+editor: visual
+---
+
+## *Rare variant analysis*
+
+*Analysis of a rare variant for Marlena*
+
+#### *Libraries*
+
+```{r}
+
+library(janitor)
+library(tidyverse)
+
+```
+
+#### *Load phenotypes*
+
+```{r}
+
+pregnancy <- read.table(
+  file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_24-06-26/pregnancy.gz",
+  header = T,
+  sep = "\t"
+)
+
+```
+
+#### *Load genotypes*
+
+```{r}
+
+genotypes <- read.table(
+  file = "/mnt/work/marc/hg/variants/rare_variant.raw",
+  header = T,
+  sep = "\t"
+)
+
+```
+
+#### *Merge*
+
+```{r}
+
+rare_variant_data <- pregnancy %>% 
+  left_join(
+    genotypes %>% 
+      select(
+        mother_sentrix_id = IID,
+        mother_genotype = rs372120002_G
+      ),
+    by = "mother_sentrix_id"
+  ) %>% 
+  left_join(
+    genotypes %>% 
+      select(
+        child_sentrix_id = IID,
+        child_genotype = rs372120002_G
+      ),
+    by = "child_sentrix_id"
+  ) %>% 
+  filter(
+    !is.na(mother_genotype) | !is.na(child_genotype)
+  )
+
+```
+
+#### *Number of participants in each category*
+
+```{r}
+
+print("Mother genotype")
+
+table(rare_variant_data$mother_genotype)
+
+```
+
+```{r}
+
+print("Child genotype")
+
+table(rare_variant_data$child_genotype)
+
+```
+
+```{r}
+
+print("Mother vs Child genotype")
+
+table(rare_variant_data$mother_genotype, rare_variant_data$child_genotype)
+
+```
+
+#### *Prevalence of NVP/HG*
+
+```{r}
+
+rare_variant_data <- rare_variant_data %>% 
+  mutate(
+    long_term_nausea_vomiting_after_13w = ifelse(!is.na(long_term_nausea_vomiting_13w_16w) | !is.na(long_term_nausea_vomiting_17w_20w) | !is.na(long_term_nausea_vomiting_21w_24w) | !is.na(long_term_nausea_vomiting_25w_28w) | !is.na(long_term_nausea_vomiting_after_29w) & long_term_nausea_vomiting_after_29w == 1, 1, 0),
+    long_term_nausea_vomiting_after_20w = ifelse(!is.na(long_term_nausea_vomiting_21w_24w) | !is.na(long_term_nausea_vomiting_25w_28w) | !is.na(long_term_nausea_vomiting_after_29w) & long_term_nausea_vomiting_after_29w == 1, 1, 0),
+    long_term_nausea_vomiting_after_29w = ifelse(!is.na(long_term_nausea_vomiting_after_29w) & long_term_nausea_vomiting_after_29w == 1, 1, 0),
+    hospitalized_prolonged_nausea_vomiting = ifelse(!is.na(hospitalized_prolonged_nausea_vomiting) & hospitalized_prolonged_nausea_vomiting == 1, 1, 0)
+  )
+
+phenotypes = c(
+  "long_term_nausea_vomiting_after_13w",
+  "long_term_nausea_vomiting_after_20w",
+  "long_term_nausea_vomiting_after_29w",
+  "hospitalized_prolonged_nausea_vomiting"
+)
+
+prevalence_tables <- list()
+
+for (phenotype in phenotypes) {
+  
+  values <- rare_variant_data[!is.na(rare_variant_data$mother_genotype) & !is.na(rare_variant_data$child_genotype), ]
+  
+  n_no <- sum(values[[phenotype]] == 0)
+  n_yes <- sum(values[[phenotype]] == 1)
+  share_yes = n_yes / nrow(values)
+  
+  prevalence_table <- data.frame(
+    genotype_mother = "any",
+    genotype_child = "any",
+    phenotype = phenotype,
+    n_no = n_no,
+    n_yes = n_yes,
+    share_yes = share_yes
+  )
+  
+  prevalence_tables[[length(prevalence_tables) + 1]] <- prevalence_table
+  
+  for (mother_genotype in 0:1) {
+    
+    for (child_genotype in 0:1) {
+      
+      values <- rare_variant_data[!is.na(rare_variant_data$mother_genotype) & rare_variant_data$mother_genotype == mother_genotype & !is.na(rare_variant_data$child_genotype) & rare_variant_data$child_genotype == child_genotype, ]
+      
+      n_no <- sum(values[[phenotype]] == 0)
+      n_yes <- sum(values[[phenotype]] == 1)
+      share_yes = n_yes / nrow(values)
+      
+      prevalence_table <- data.frame(
+        genotype_mother = mother_genotype,
+        genotype_child = child_genotype,
+        phenotype = phenotype,
+        n_no = n_no,
+        n_yes = n_yes,
+        share_yes = share_yes
+      )
+      
+      prevalence_tables[[length(prevalence_tables) + 1]] <- prevalence_table
+      
+    }
+  }
+}
+
+prevalence_table_all <- do.call(rbind, prevalence_tables)
+
+write.table(
+  prevalence_table_all,
+  file = "prevalence.txt",
+  sep = "\t",
+  col.names = T,
+  row.names = F
+)
+
+
+```
