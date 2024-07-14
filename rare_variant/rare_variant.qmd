@@ -166,7 +166,8 @@ write.table(
   file = "prevalence.txt",
   sep = "\t",
   col.names = T,
-  row.names = F
+  row.names = F,
+  quote = F
 )
 
 
