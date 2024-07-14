@@ -42,31 +42,25 @@ config = read_yaml("look_up.yaml")
 # Locus names
 variants_details = read.table(
   file = "resources/look_up_snps_24.06.05",
-  
+  header = T,
+  sep = "\t"
 )
+loci = variants_details$locus
+names(loci) = variants_details$id
 
 # Summary stats
-
 look_up_data = read.table(
-  file = "resources/look_up_merged_23-07-21.gz",
+  file = "resources/look_up_merged_24-06-05.gz",
   header = T,
   sep = "\t"
 ) %>% 
-  filter(
-    id %in% config$variants
+  left_join(
+    variants_details %>% 
+      select(
+        id, meta_id, locus
+      ), 
+      by = "id"
   )
-
-look_up_data$locus = loci[look_up_data$id]
-
-look_up_ids <- unique(look_up_data$id)
-
-write.table(
-  look_up_ids,
-  file = "resources/look_up_ids_24-02-24",
-  col.names = F,
-  row.names = F,
-  quote = F
-)
 
 ```
 
@@ -74,7 +68,7 @@ write.table(
 
 ```{r}
 
-ref_analysis = "Hyperemesis gravidarum vs. no nausea vomiting"
+ref_analysis = "Nausea vomiting during pregnancy"
 
 for (variant in unique(look_up_data$id)) {
   
@@ -314,9 +308,9 @@ for (phenotype in unique(look_up_data$phenotype)) {
 ```{r}
 
 nvp_time = data.frame(
-  phenotype = c("nausea_vomiting_before_4w", "nausea_vomiting_5w_8w", "nausea_vomiting_9w_12w", "long_term_nausea_vomiting_13w_16w", "long_term_nausea_vomiting_17w_20w", "long_term_nausea_vomiting_after_21w"),
-  week = c("Before 4", "4 to 8", "9 to 12", "13 to 16", "17 to 20", "After 21"),
-  week_value = c(2, 6, 10.5, 14.5, 18.5, 22.5)
+  phenotype = c("nausea_vomiting_before_4w", "nausea_vomiting_5w_8w", "nausea_vomiting_9w_12w", "long_term_nausea_vomiting_13w_16w", "long_term_nausea_vomiting_17w_20w", "long_term_nausea_vomiting_21w_24w", "long_term_nausea_vomiting_25w_28w", "long_term_nausea_vomiting_after_29w"),
+  week = c("Before 4", "4 to 8", "9 to 12", "13 to 16", "17 to 20", "21 to 24", "25 to 28", "≥29"),
+  week_value = c(2, 6, 10.5, 14.5, 18.5, 22.5, 26.5, 30.5)
 )
 
 nvp_time_plot = look_up_data %>% 
@@ -435,8 +429,8 @@ time_plot = ggplot() +
 
 ```{r}
 
-variants_to_plot = config$variants[config$variants %in% look_up_data$id]
-loci_to_plot = config$loci[config$variants %in% look_up_data$id]
+variants_to_plot = variants_details$id
+loci_to_plot = variants_details$locus
 
 
 nvp_others_time_plot = look_up_data %>% 
@@ -551,7 +545,7 @@ time_plot_mothers = ggplot() +
   time_plot_mothers
 ```
 
-### All variants, mothers only
+### Table with summary stats for Marlena
 
 ```{r}
 
@@ -562,11 +556,220 @@ table_marlena <- look_up_data %>%
 
 write.table(
   table_marlena,
-  file = "resources/table_marlena_23.12.19",
+  file = "resources/table_marlena_24.06.05",
   col.names = T,
   row.names = F,
   sep = "\t",
   quote = F
 )
+
+```
+
+### Heatmap
+
+```{r}
+
+stats <- "GWAS"
+
+locus_max <- look_up_data %>% 
+  filter(
+    phenotype %in% nvp_time$phenotype & population == "mothers" & statistics == stats
+  ) %>% 
+  group_by(
+    id
+  ) %>% 
+  summarise(
+    max_beta = max(beta)
+  )
+
+locus_time <- look_up_data %>% 
+  filter(
+    phenotype %in% nvp_time$phenotype & population == "mothers" & statistics == stats
+  ) %>% 
+  left_join(
+    nvp_time,
+    by = "phenotype"
+  ) %>% 
+  left_join(
+    locus_max,
+    by = "id"
+  ) %>% 
+  filter(
+    beta > max_beta / 2
+  ) %>% 
+  group_by(
+    id
+  ) %>% 
+  summarize(
+    start = min(week_value),
+    end = max(week_value)
+  ) %>% 
+  arrange(
+    start, end
+  ) %>% 
+  left_join(
+    variants_details %>% 
+      select(id, locus),
+    by = "id"
+  )
+
+locus_order <- c("GDF15", "PGR-TRPC6", "IGFBP7", "GFRAL", "SYN3", "SLITRK1", "IGSF11", "TCF7L2-HABP2", "FSHB")
+
+heatmap_data = look_up_data %>% 
+  filter(
+    phenotype %in% nvp_time$phenotype & population == "mothers" & statistics == stats
+  ) %>% 
+  left_join(
+    nvp_time,
+    by = "phenotype"
+  ) %>% 
+  mutate(
+    week_factor = factor(week, levels = nvp_time$week),
+    locus_factor = factor(locus, levels = rev(locus_order)),
+    p_category = case_when(
+      log10p > 6 ~ "p < 10-6",
+      log10p > 4 ~ "p < 10-4",
+      log10p > 2 ~ "p < 10-2",
+      T        ~ "p >= 10-2"
+    ),
+    p_category_factor = factor(p_category, levels = c("p >= 10-2", "p < 10-2", "p < 10-4", "p < 10-6"))
+  )
+
+names(heatmap_data$locus_factor) <- rev(paste0(locus_time$locus, " (", locus_time$id, ")"))
+
+min_fill = min(heatmap_data$beta)
+
+if (min_fill > 0) {
+  
+  stop("Min beta expected to be negative")
+  
+}
+
+max_fill = max(heatmap_data$beta)
+
+if (max_fill < 0) {
+  
+  stop("Max beta expected to be positive")
+  
+}
+
+fill_scale = 0.4
+abs_fill = max(abs(max_fill), abs(min_fill))
+begin_fill = 0.5 + fill_scale * 0.5 * min_fill / abs_fill
+end_fill = 0.5 + fill_scale * 0.5 * max_fill / abs_fill
+
+heatmap_gwas <- ggplot(
+  data = heatmap_data
+) +
+  theme_bw(
+    base_size = 24
+  ) +
+  geom_tile(
+    mapping = aes(
+      x = week_factor,
+      y = locus_factor,
+      fill = beta
+    )
+  ) +
+  geom_text(
+    mapping = aes(
+      x = week_factor,
+      y = locus_factor,
+      label = round(beta, 2),
+      col = p_category_factor
+    ),
+      size = 6
+  ) +
+  scale_x_discrete(
+    expand = c(0, 0)
+  ) +
+  scale_y_discrete(
+    expand = c(0, 0)
+  ) +
+  scale_fill_scico(
+    name = "Beta",
+    palette = "vik",
+    begin = begin_fill,
+    end = end_fill,
+    guide = guide_colorbar(
+    barwidth = 10
+    )
+  ) +
+  scale_color_manual(
+    name = "p-value",
+    values = c("white", "grey60", "grey40", "grey20"),
+        labels = c("", "", "", "", ""),
+        guide = guide_legend(
+            override.aes = list(
+                label = c("p >= 10-2", "p < 10-2", "p < 10-4", "p < 10-6"),
+                size = 6
+            )
+        )
+  ) +
+  theme(
+    axis.title = element_blank(),
+    legend.position = "top",
+    legend.spacing.x = unit(1.0, "cm")
+  )
+
+png(
+  file = "plots/heatmap_gwas.png",
+  height = 600,
+  width = 900
+)
+grid.draw(heatmap_gwas)
+device <- dev.off()
+
+```
+
+#### Bubble plot
+
+```{r}
+
+bubble_gwas <- ggplot(
+  data = heatmap_data
+) +
+  theme_bw(
+    base_size = 24
+  ) +
+  geom_point(
+    mapping = aes(
+      x = week_factor,
+      y = locus_factor,
+      col = beta,
+      size = p_category_factor
+    )
+  ) +
+  scale_x_discrete(
+    name = "Gestational week"
+  ) +
+  scale_size_manual(
+    name = NULL,
+    values = c(5, 10, 15, 20)
+  ) +
+  scale_color_scico(
+    name = "Beta",
+    palette = "vik",
+    begin = begin_fill,
+    end = end_fill,
+    guide = guide_colorbar(
+    barwidth = 12
+    )
+  ) +
+  theme(
+    axis.title.y = element_blank(),
+    legend.position = "top",
+    legend.margin = margin(t = 0, b = 0, l = -40, r = 20, unit = 'pt'),
+    panel.grid = element_blank()
+  )
+
+png(
+  file = "plots/bubble_gwas.png",
+  height = 600,
+  width = 900
+)
+grid.draw(bubble_gwas)
+device <- dev.off()
+
 
 ```
