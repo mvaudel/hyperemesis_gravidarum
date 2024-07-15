@@ -33,8 +33,14 @@ pregnancy <- read.table(
 
 ```{r}
 
-genotypes <- read.table(
-  file = "/mnt/work/marc/hg/variants/rare_variant.raw",
+genotypes_10 <- read.table(
+  file = "/mnt/work/marc/hg/variants/rare_variant_10.raw",
+  header = T,
+  sep = "\t"
+)
+
+genotypes_19 <- read.table(
+  file = "/mnt/work/marc/hg/variants/rare_variant_19.raw",
   header = T,
   sep = "\t"
 )
@@ -46,24 +52,40 @@ genotypes <- read.table(
 ```{r}
 
 rare_variant_data <- pregnancy %>% 
+  filter(
+    !is.na(mother_sentrix_id) & !is.na(child_sentrix_id)
+  ) %>% 
   left_join(
-    genotypes %>% 
+    genotypes_19 %>% 
       select(
         mother_sentrix_id = IID,
-        mother_genotype = rs372120002_G
+        mother_genotype_GDF15 = rs372120002_G
       ),
     by = "mother_sentrix_id"
   ) %>% 
   left_join(
-    genotypes %>% 
+    genotypes_19 %>% 
       select(
         child_sentrix_id = IID,
-        child_genotype = rs372120002_G
+        child_genotype_GDF15 = rs372120002_G
       ),
     by = "child_sentrix_id"
   ) %>% 
-  filter(
-    !is.na(mother_genotype) | !is.na(child_genotype)
+  left_join(
+    genotypes_10 %>% 
+      select(
+        mother_sentrix_id = IID,
+        mother_genotype_TCF7L2 = rs76856932_A
+      ),
+    by = "mother_sentrix_id"
+  ) %>% 
+  left_join(
+    genotypes_10 %>% 
+      select(
+        child_sentrix_id = IID,
+        child_genotype_TCF7L2 = rs76856932_A
+      ),
+    by = "child_sentrix_id"
   )
 
 ```
@@ -72,17 +94,17 @@ rare_variant_data <- pregnancy %>%
 
 ```{r}
 
-print("Mother genotype")
+print("Mother genotype GDF15")
 
-table(rare_variant_data$mother_genotype)
+table(rare_variant_data$mother_genotype_GDF15)
 
 ```
 
 ```{r}
 
-print("Child genotype")
+print("Child genotype GDF15")
 
-table(rare_variant_data$child_genotype)
+table(rare_variant_data$child_genotype_GDF15)
 
 ```
 
@@ -90,8 +112,43 @@ table(rare_variant_data$child_genotype)
 
 print("Mother vs Child genotype")
 
-table(rare_variant_data$mother_genotype, rare_variant_data$child_genotype)
+table(rare_variant_data$mother_genotype_GDF15, rare_variant_data$child_genotype_GDF15)
 
+```
+
+```{r}
+
+print("Mother genotype TCF7L2")
+
+table(rare_variant_data$mother_genotype_TCF7L2)
+
+```
+
+```{r}
+
+print("Child genotype TCF7L2")
+
+table(rare_variant_data$child_genotype_TCF7L2)
+```
+
+```{r}
+
+table(rare_variant_data$mother_genotype_GDF15, rare_variant_data$mother_genotype_TCF7L2)
+```
+
+```{r}
+
+table(rare_variant_data$child_genotype_GDF15, rare_variant_data$child_genotype_TCF7L2)
+```
+
+```{r}
+
+table(rare_variant_data$mother_genotype_GDF15, rare_variant_data$child_genotype_TCF7L2)
+```
+
+```{r}
+
+table(rare_variant_data$child_genotype_GDF15, rare_variant_data$mother_genotype_TCF7L2)
 ```
 
 #### *Prevalence of NVP/HG*
@@ -117,13 +174,32 @@ prevalence_tables <- list()
 
 for (phenotype in phenotypes) {
   
-  values <- rare_variant_data[!is.na(rare_variant_data$mother_genotype) & !is.na(rare_variant_data$child_genotype), ]
+  values <- rare_variant_data[!is.na(rare_variant_data$mother_genotype_GDF15) & !is.na(rare_variant_data$child_genotype_GDF15), ]
   
   n_no <- sum(values[[phenotype]] == 0)
   n_yes <- sum(values[[phenotype]] == 1)
   share_yes = n_yes / nrow(values)
   
   prevalence_table <- data.frame(
+    variant = "rs372120002 (GDF15)",
+    genotype_mother = "any",
+    genotype_child = "any",
+    phenotype = phenotype,
+    n_no = n_no,
+    n_yes = n_yes,
+    share_yes = share_yes
+  )
+  
+  prevalence_tables[[length(prevalence_tables) + 1]] <- prevalence_table
+  
+  values <- rare_variant_data[!is.na(rare_variant_data$mother_genotype_TCF7L2) & !is.na(rare_variant_data$child_genotype_TCF7L2), ]
+  
+  n_no <- sum(values[[phenotype]] == 0)
+  n_yes <- sum(values[[phenotype]] == 1)
+  share_yes = n_yes / nrow(values)
+  
+  prevalence_table <- data.frame(
+    variant = "rs76856932 (TCF7L2)",
     genotype_mother = "any",
     genotype_child = "any",
     phenotype = phenotype,
@@ -138,13 +214,32 @@ for (phenotype in phenotypes) {
     
     for (child_genotype in 0:1) {
       
-      values <- rare_variant_data[!is.na(rare_variant_data$mother_genotype) & rare_variant_data$mother_genotype == mother_genotype & !is.na(rare_variant_data$child_genotype) & rare_variant_data$child_genotype == child_genotype, ]
+      values <- rare_variant_data[!is.na(rare_variant_data$mother_genotype_GDF15) & rare_variant_data$mother_genotype_GDF15 == mother_genotype & !is.na(rare_variant_data$child_genotype_GDF15) & rare_variant_data$child_genotype_GDF15 == child_genotype, ]
       
       n_no <- sum(values[[phenotype]] == 0)
       n_yes <- sum(values[[phenotype]] == 1)
       share_yes = n_yes / nrow(values)
       
       prevalence_table <- data.frame(
+        variant = "rs372120002 (GDF15)",
+        genotype_mother = mother_genotype,
+        genotype_child = child_genotype,
+        phenotype = phenotype,
+        n_no = n_no,
+        n_yes = n_yes,
+        share_yes = share_yes
+      )
+      
+      prevalence_tables[[length(prevalence_tables) + 1]] <- prevalence_table
+      
+      values <- rare_variant_data[!is.na(rare_variant_data$mother_genotype_TCF7L2) & rare_variant_data$mother_genotype_TCF7L2 == mother_genotype & !is.na(rare_variant_data$child_genotype_TCF7L2) & rare_variant_data$child_genotype_TCF7L2 == child_genotype, ]
+      
+      n_no <- sum(values[[phenotype]] == 0)
+      n_yes <- sum(values[[phenotype]] == 1)
+      share_yes = n_yes / nrow(values)
+      
+      prevalence_table <- data.frame(
+        variant = "rs76856932 (TCF7L2)",
         genotype_mother = mother_genotype,
         genotype_child = child_genotype,
         phenotype = phenotype,
