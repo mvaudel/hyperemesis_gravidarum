@@ -1,8 +1,4 @@
----
-title: "look_up"
-format: gfm
-editor: visual
----
+# look_up
 
 ## Look up of top SNPs
 
@@ -10,32 +6,48 @@ Look up of *bona fide* variants in the GWAS files.
 
 ### Libraries and settings
 
-```{r}
-
+``` r
 library(conflicted)
 library(yaml)
 library(janitor)
 library(glue)
 library(tidyverse)
+```
+
+    ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
+    ✔ ggplot2 3.4.4     ✔ purrr   1.0.2
+    ✔ tibble  3.2.1     ✔ dplyr   1.1.4
+    ✔ tidyr   1.3.1     ✔ stringr 1.5.1
+    ✔ readr   2.1.5     ✔ forcats 1.0.0
+
+``` r
 library(ggplot2)
 library(scico)
 library(ggside)
-library(patchwork)
+```
+
+    Registered S3 method overwritten by 'ggside':
+      method from   
+      +.gg   ggplot2
+
+``` r
 library(ragg)
 library(grid)
 
 # Solve name space conflicts
 conflicts_prefer(dplyr::filter)
+```
 
+    [conflicted] Will prefer dplyr::filter over any other package.
+
+``` r
 # General parameters
 theme_set(theme_bw(base_size = 14))
-
 ```
 
 ### Load data
 
-```{r}
-
+``` r
 # Config
 
 config = read_yaml("look_up.yaml")
@@ -62,13 +74,11 @@ look_up_data = read.table(
       ), 
       by = "id"
   )
-
 ```
 
 ### Swap alleles
 
-```{r}
-
+``` r
 ref_analysis = "Nausea vomiting during pregnancy"
 
 for (variant in unique(look_up_data$id)) {
@@ -91,13 +101,11 @@ for (variant in unique(look_up_data$id)) {
   }
   
 }
-
 ```
 
 ### Functions
 
-```{r}
-
+``` r
 get_forest_plot_wlm = function(
   data,
   phenotype_name
@@ -255,13 +263,11 @@ get_forest_plot_mother = function(
   return(plot)
   
 }
-
 ```
 
 ### Forest plots
 
-```{r}
-
+``` r
 if (!dir.exists("plots")) {
 
   dir.create("plots")
@@ -301,59 +307,57 @@ for (phenotype in unique(look_up_data$phenotype)) {
   grid.draw(plot + ggtitle(phenotype))
   
 }
-
 ```
 
-```{r}
+![](look_up_files/figure-commonmark/unnamed-chunk-5-1.png)
 
-# Forest plots for manuscript
+![](look_up_files/figure-commonmark/unnamed-chunk-5-2.png)
 
-phenotype <- "nausea_vomiting_strength"
-  
-  mother_plot = get_forest_plot_mother(
-    data = look_up_data,
-    phenotype_name = phenotype
-  ) + 
-    theme(
-      plot.title = element_text(
-        hjust = 0
-      ),
-      plot.subtitle = element_text(
-        hjust = 0
-      )
-    )
-  
-  wlm_plot = get_forest_plot_wlm(
-    data = look_up_data,
-    phenotype_name = phenotype
-  ) + 
-    theme(
-      axis.text.y = element_blank(),
-      axis.ticks.y = element_blank(),
-      plot.title = element_text(
-        hjust = 0
-      ),
-      plot.subtitle = element_text(
-        hjust = 0
-      )
-    )
+![](look_up_files/figure-commonmark/unnamed-chunk-5-3.png)
 
-  agg_png(
-    filename = glue("plots/forest_24.08.26.png"),
-    height = 1.25*7,
-    width = 1.75*21,
-    units = "cm",
-    scaling = 1
-  )
-  mother_plot + wlm_plot + plot_annotation(tag_levels = 'A') & theme(plot.tag = element_text(size = 16))
-  device = dev.off()
+![](look_up_files/figure-commonmark/unnamed-chunk-5-4.png)
 
-```
+![](look_up_files/figure-commonmark/unnamed-chunk-5-5.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-6.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-7.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-8.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-9.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-10.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-11.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-12.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-13.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-14.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-15.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-16.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-17.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-18.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-19.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-20.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-21.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-22.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-5-23.png)
 
 ### Time-resolved plots
 
-```{r}
-
+``` r
 nvp_time = data.frame(
   phenotype = c("nausea_vomiting_before_4w", "nausea_vomiting_5w_8w", "nausea_vomiting_9w_12w", "long_term_nausea_vomiting_13w_16w", "long_term_nausea_vomiting_17w_20w", "long_term_nausea_vomiting_21w_24w", "long_term_nausea_vomiting_25w_28w", "long_term_nausea_vomiting_after_29w"),
   week = c("Before 4", "4 to 8", "9 to 12", "13 to 16", "17 to 20", "21 to 24", "25 to 28", "≥29"),
@@ -469,13 +473,49 @@ time_plot = ggplot() +
   grid.draw(time_plot + ggtitle(plot_data$name[1] ))
   
 }
-
 ```
+
+    Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+    ℹ Please use `linewidth` instead.
+
+    Warning: Using size for a discrete variable is not advised.
+    Using size for a discrete variable is not advised.
+
+![](look_up_files/figure-commonmark/unnamed-chunk-6-1.png)
+
+    Warning: Using size for a discrete variable is not advised.
+
+![](look_up_files/figure-commonmark/unnamed-chunk-6-2.png)
+
+    Warning: Using size for a discrete variable is not advised.
+
+![](look_up_files/figure-commonmark/unnamed-chunk-6-3.png)
+
+    Warning: Using size for a discrete variable is not advised.
+
+![](look_up_files/figure-commonmark/unnamed-chunk-6-4.png)
+
+    Warning: Using size for a discrete variable is not advised.
+
+![](look_up_files/figure-commonmark/unnamed-chunk-6-5.png)
+
+    Warning: Using size for a discrete variable is not advised.
+
+![](look_up_files/figure-commonmark/unnamed-chunk-6-6.png)
+
+    Warning: Using size for a discrete variable is not advised.
+
+![](look_up_files/figure-commonmark/unnamed-chunk-6-7.png)
+
+    Warning: Using size for a discrete variable is not advised.
+
+![](look_up_files/figure-commonmark/unnamed-chunk-6-8.png)
+
+![](look_up_files/figure-commonmark/unnamed-chunk-6-9.png)
 
 ### All variants, mothers only
 
-```{r}
-
+``` r
 variants_to_plot = variants_details$id
 loci_to_plot = variants_details$locus
 
@@ -579,7 +619,11 @@ time_plot_mothers = ggplot() +
   facet_grid(
     id_factor ~ .
   )
-  
+```
+
+    Warning: Using size for a discrete variable is not advised.
+
+``` r
   agg_png(
     filename = glue("plots/nvp_time_mothers.png"),
     height = 8 * 600,
@@ -592,10 +636,11 @@ time_plot_mothers = ggplot() +
   time_plot_mothers
 ```
 
+![](look_up_files/figure-commonmark/unnamed-chunk-7-1.png)
+
 ### Table with summary stats for Marlena
 
-```{r}
-
+``` r
 table_marlena <- look_up_data %>% 
   select(
     chr, pos, allele0, allele1, a1freq, id, locus, phenotype, population, statistics, n, beta, se, log10p
@@ -609,13 +654,11 @@ write.table(
   sep = "\t",
   quote = F
 )
-
 ```
 
 ### Heatmap
 
-```{r}
-
+``` r
 stats <- "GWAS"
 
 locus_max <- look_up_data %>% 
@@ -766,13 +809,11 @@ png(
 )
 grid.draw(heatmap_gwas)
 device <- dev.off()
-
 ```
 
 #### Bubble plot
 
-```{r}
-
+``` r
 bubble_gwas <- ggplot(
   data = heatmap_data
 ) +
@@ -817,6 +858,4 @@ png(
 )
 grid.draw(bubble_gwas)
 device <- dev.off()
-
-
 ```
