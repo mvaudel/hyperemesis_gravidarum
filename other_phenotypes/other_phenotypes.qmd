@@ -21,7 +21,8 @@ library(ggplot2)
 library(gghalves)
 library(scico)
 library(ggside)
-library(parallel) 
+library(parallel)
+library(grid)
 
 # Solve name space conflicts
 conflicts_prefer(dplyr::filter)
@@ -651,7 +652,7 @@ Phenotypic association with NVP/HG
 
 ```{r}
 
-binary_phenotypes <- c("perinatal_death", "spontaneous_delivery", "hospitalized_pre_eclampsia", "early_preeclampsia", "preeclampsia", "preeclampsia_serious", "diabetes_before", "diabetes_during", "diabetes_during_not_before", "diabetes")
+binary_phenotypes <- c("perinatal_death", "hospitalized_pre_eclampsia", "early_preeclampsia", "preeclampsia", "preeclampsia_serious")
 
 term_levels = c("<37w", ">=37w", "All")
 
@@ -814,7 +815,7 @@ write.table(
   row.names = F
 )
 
-numeric_phenotypes <- c("n_previous_stillbirths", "n_previous_live_births", "previous_miscarriages", "previous_miscarriages_before_12w", "previous_miscarriages_12_23w", "pregnancy_duration", "placental_weight", "z_placental_weight", "z_placental_weight_pregnancy_duration", "weight_birth", "z_weight_birth", "z_weight_birth_pregnancy_duration", "hc_birth", "z_hc_birth", "z_hc_birth_length_birth", "z_hc_birth_weight_birth", "z_placental_weight_weight_birth", "preeclampsia_quant", "mother_age_at_menarche", "mother_age_15w", "mother_height", "mother_weight_beginning_self", "mother_weight_15w", "mother_weight_end", "mother_bmi_beginning", "mother_bmi_15w", "mother_bmi_end", "mother_bmi_beginning_log", "mother_bmi_15w_log", "mother_bmi_end_log", "mother_weight_gain_15w", "mother_weight_gain_15w_relative", "mother_weight_gain_end", "mother_weight_gain_end_relative")
+numeric_phenotypes <- c("pregnancy_duration", "z_placental_weight_pregnancy_duration", "z_weight_birth_pregnancy_duration", "z_hc_birth", "mother_age_at_menarche", "mother_age_15w", "mother_weight_beginning_self", "mother_weight_15w", "mother_weight_end", "mother_bmi_beginning", "mother_bmi_15w", "mother_bmi_end")
 
 t_results <- list()
 
@@ -982,14 +983,11 @@ Load genotypes
 ```{r}
 
 meta_results <- read.table(
-  file = "utils/look_up_snps_24.02.21",
+  file = "utils/look_up_snps_25.03.26",
   sep = "\t",
   header = T
 )  %>% 
-  clean_names() %>% 
-  filter(
-    !id %in% c("rs10073299")
-  )
+  clean_names()
 
 genotypes_mothers <- read.table(
   file = "/mnt/work/marc/hg/variants/mothers_genotypes.raw",
@@ -1042,7 +1040,9 @@ lm_function <- function(plink_id, snp_data, pheno) {
     
     coefficients <- data.frame(
       plink_id = plink_id,
+      maf = sum(variant_data$genotype)/(2*sum(!is.na(variant_data$genotype))),
       phenotype = pheno,
+      test = NA,
       beta = NA,
       se = NA,
       p = NA,
@@ -1062,7 +1062,9 @@ lm_function <- function(plink_id, snp_data, pheno) {
     
     coefficients <- data.frame(
       plink_id = plink_id,
+      maf = sum(variant_data$genotype)/(2*sum(!is.na(variant_data$genotype))),
       phenotype = pheno,
+      test = "binomial",
       beta = lm_summary$coef["genotype", "Estimate"],
       se = lm_summary$coef["genotype", "Std. Error"],
       p = lm_summary$coef["genotype", "Pr(>|z|)"],
@@ -1081,7 +1083,9 @@ lm_function <- function(plink_id, snp_data, pheno) {
     
     coefficients <- data.frame(
       plink_id = plink_id,
+      maf = sum(variant_data$genotype)/(2*sum(!is.na(variant_data$genotype))),
       phenotype = pheno,
+      test = "linear",
       beta = lm_summary$coef["genotype", "Estimate"],
       se = lm_summary$coef["genotype", "Std. Error"],
       p = lm_summary$coef["genotype", "Pr(>|t|)"],
@@ -1095,7 +1099,7 @@ lm_function <- function(plink_id, snp_data, pheno) {
   
 }
 
-phenotypes <- c("nausea_vomiting", "nausea_vomiting_hg", "nausea_duration", "vomiting_duration", "perinatal_death", "spontaneous_delivery", "hospitalized_pre_eclampsia", "early_preeclampsia", "preeclampsia", "preeclampsia_serious", "diabetes_before", "diabetes_during", "diabetes_during_not_before", "diabetes", "n_previous_stillbirths", "n_previous_live_births", "previous_miscarriages", "previous_miscarriages_before_12w", "previous_miscarriages_12_23w", "pregnancy_duration", "placental_weight", "z_placental_weight", "z_placental_weight_pregnancy_duration", "weight_birth", "z_weight_birth", "z_weight_birth_pregnancy_duration", "hc_birth", "z_hc_birth", "z_hc_birth_length_birth", "z_hc_birth_weight_birth", "z_placental_weight_weight_birth", "preeclampsia_quant", "mother_age_at_menarche", "mother_age_15w", "mother_height", "mother_weight_beginning_self", "mother_weight_15w", "mother_weight_end", "mother_bmi_beginning", "mother_bmi_15w", "mother_bmi_end", "mother_bmi_beginning_log", "mother_bmi_15w_log", "mother_bmi_end_log", "mother_weight_gain_15w", "mother_weight_gain_15w_relative", "mother_weight_gain_end", "mother_weight_gain_end_relative")
+phenotypes <- c("nausea_vomiting", "nausea_vomiting_hg", "nausea_duration", "vomiting_duration", "perinatal_death", "hospitalized_pre_eclampsia", "early_preeclampsia", "preeclampsia", "preeclampsia_serious", "pregnancy_duration", "z_placental_weight_pregnancy_duration", "z_weight_birth_pregnancy_duration", "z_hc_birth", "mother_age_at_menarche", "mother_age_15w", "mother_weight_beginning_self", "mother_bmi_beginning", "mother_weight_gain_15w", "mother_weight_gain_end")
 
 lm_coefs_mother <- list()
 
@@ -1161,7 +1165,7 @@ for (phenotype_i in 1:length(phenotypes)) {
 
 lm_coefs_mother <- do.call(rbind, lm_coefs_mother)
 
-lm_coefs_mother <- lm_coefs_mother %>% 
+lm_coefs_mother_merged <- lm_coefs_mother %>% 
    separate(
      plink_id, 
      into = c("id", "allele"), 
@@ -1171,20 +1175,26 @@ lm_coefs_mother <- lm_coefs_mother %>%
   mutate(
     allele = toupper(allele)
   ) %>% 
-  left_join(
+  inner_join(
     meta_results %>% 
       select(
-        id,
+        id = snp,
         locus,
+        allele0 = a0,
+        allele1 = a1,
         beta_meta = beta,
         se_meta = se,
         p_meta = p
       ),
     by = "id"
+  ) %>% 
+  mutate(
+    hg_increasing_allele = ifelse(beta_meta >= 0, allele1, allele0),
+    beta_aligned = ifelse(allele == hg_increasing_allele, beta, -beta)
   )
 
 write.table(
-  lm_coefs_mother,
+  lm_coefs_mother_merged,
   file = gzfile("tables/top_hits_association_other_phenotypes.gz"),
   sep = " \t",
   col.names = T,
@@ -1203,22 +1213,12 @@ for (phenotype_i in 1:length(phenotypes)) {
   
   print(glue("{Sys.time()} - Association for {pheno_name} ({phenotype_i} of {length(phenotypes)})"))
 
-plot_data <- lm_coefs_mother %>% 
+plot_data <- lm_coefs_mother_merged %>% 
   filter(
     phenotype == pheno_name
   ) %>% 
-  select(
-    id, allele, beta, se, p
-  ) %>% 
-  left_join(
-    meta_results %>% 
-      select(
-        id, allele_meta = allele1, beta_meta = beta, se_meta = se, p_meta = p
-      ),
-    by = "id"
-  ) %>% 
   mutate(
-    beta_swapped = ifelse(allele != allele_meta, -beta, beta)
+    beta_meta_abs = abs(beta_meta)
   )
 
 plot <- ggplot(
@@ -1237,26 +1237,26 @@ plot <- ggplot(
   ) +
   geom_segment(
     mapping = aes(
-      x = beta_meta - qnorm(0.975) * se_meta,
-      xend = beta_meta + qnorm(0.975) * se_meta,
-      y = beta_swapped,
-      yend = beta_swapped
+      x = beta_meta_abs - qnorm(0.975) * se_meta,
+      xend = beta_meta_abs + qnorm(0.975) * se_meta,
+      y = beta_aligned,
+      yend = beta_aligned
     ),
     color = "grey40"
   ) +
   geom_segment(
     mapping = aes(
-      x = beta_meta,
-      xend = beta_meta,
-      y = beta_swapped - qnorm(0.975) * se_meta,
-      yend = beta_swapped + qnorm(0.975) * se_meta
+      x = beta_meta_abs,
+      xend = beta_meta_abs,
+      y = beta_aligned - qnorm(0.975) * se,
+      yend = beta_aligned + qnorm(0.975) * se
     ),
     color = "grey40"
   ) +
   geom_point(
     mapping = aes(
-      x = beta_meta,
-      y = beta_swapped
+      x = beta_meta_abs,
+      y = beta_aligned
     )
   ) +
   scale_x_continuous(
@@ -1295,7 +1295,7 @@ score_df <- genotypes_mothers %>%
   left_join(
     meta_results %>% 
       select(
-        id, allele_meta = allele1, beta
+        id = snp, allele_meta = a1, beta
       ) %>% 
       filter(
         !is.na(beta)
@@ -1317,6 +1317,12 @@ score_df <- genotypes_mothers %>%
   summarise(
     meta_score = sum(beta_swapped * genotype)
   )
+
+mean_score <- mean(score_df$meta_score, na.rm = T)
+sd_score <- sd(score_df$meta_score, na.rm = T)
+
+score_df$meta_score <- score_df$meta_score - mean_score
+score_df$meta_score <- score_df$meta_score / sd_score
   
 ggplot() +
   geom_density(
