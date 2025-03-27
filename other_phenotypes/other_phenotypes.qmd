@@ -1418,13 +1418,13 @@ lm_score_coefs_mother <- list()
 
 for (phenotype_i in 1:length(phenotypes)) {
   
+  print(glue("{Sys.time()} - Association for {pheno_name} ({phenotype_i} of {length(phenotypes)})"))
+  
   for (hg in 0:1) {
     
     for (pregnancy_duration_i in 0:2) {
   
   pheno_name <- phenotypes[phenotype_i]
-  
-  print(glue("{Sys.time()} - Association for {pheno_name} ({phenotype_i} of {length(phenotypes)})"))
   
   model_df <- phenotype_score_df
   
