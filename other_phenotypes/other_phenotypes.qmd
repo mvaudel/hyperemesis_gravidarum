@@ -655,6 +655,7 @@ Phenotypic association with NVP/HG
 binary_phenotypes <- c("perinatal_death", "hospitalized_pre_eclampsia", "early_preeclampsia", "preeclampsia", "preeclampsia_serious")
 
 term_levels = c("<37w", ">=37w", "All")
+term_labels = c("before_37w", "after_or_equal_37w", "All")
 
 fisher_results <- list()
 
@@ -1497,8 +1498,10 @@ for (phenotype_i in 1:length(phenotypes)) {
       hjust = 1
     )
   
+  term_label <- term_labels[pregnancy_duration_i + 1]
+  
   png(
-    filename = glue("plots/{phenotype}_{hg_label}_{term_level}_prs.png"),
+    filename = glue("plots/{phenotype}_{hg_label}_{term_label}_prs.png"),
     width = 900,
     height = 600
   )
