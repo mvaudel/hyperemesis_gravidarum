@@ -813,7 +813,8 @@ write.table(
   file = gzfile("tables/binary_phenotypes_fisher_test.gz"),
   sep = " \t",
   col.names = T,
-  row.names = F
+  row.names = F,
+  quote = F
 )
 
 numeric_phenotypes <- c("pregnancy_duration", "z_placental_weight_pregnancy_duration", "z_weight_birth_pregnancy_duration", "z_hc_birth", "mother_age_at_menarche", "mother_age_15w", "mother_weight_beginning_self", "mother_weight_15w", "mother_weight_end", "mother_bmi_beginning", "mother_bmi_15w", "mother_bmi_end")
@@ -974,7 +975,8 @@ write.table(
   file = gzfile("tables/numeric_phenotypes_t_test.gz"),
   sep = " \t",
   col.names = T,
-  row.names = F
+  row.names = F,
+  quote = F
 )
 
 ```
@@ -1041,7 +1043,7 @@ lm_function <- function(plink_id, snp_data, pheno) {
     
     coefficients <- data.frame(
       plink_id = plink_id,
-      maf = sum(variant_data$genotype)/(2*sum(!is.na(variant_data$genotype))),
+      allele_frequency = sum(variant_data$genotype)/(2*sum(!is.na(variant_data$genotype))),
       phenotype = pheno,
       test = NA,
       beta = NA,
@@ -1063,7 +1065,7 @@ lm_function <- function(plink_id, snp_data, pheno) {
     
     coefficients <- data.frame(
       plink_id = plink_id,
-      maf = sum(variant_data$genotype)/(2*sum(!is.na(variant_data$genotype))),
+      allele_frequency = sum(variant_data$genotype)/(2*sum(!is.na(variant_data$genotype))),
       phenotype = pheno,
       test = "binomial",
       beta = lm_summary$coef["genotype", "Estimate"],
@@ -1084,7 +1086,7 @@ lm_function <- function(plink_id, snp_data, pheno) {
     
     coefficients <- data.frame(
       plink_id = plink_id,
-      maf = sum(variant_data$genotype)/(2*sum(!is.na(variant_data$genotype))),
+      allele_frequency = sum(variant_data$genotype)/(2*sum(!is.na(variant_data$genotype))),
       phenotype = pheno,
       test = "linear",
       beta = lm_summary$coef["genotype", "Estimate"],
@@ -1191,7 +1193,8 @@ lm_coefs_mother_merged <- lm_coefs_mother %>%
   ) %>% 
   mutate(
     hg_increasing_allele = ifelse(beta_meta >= 0, allele1, allele0),
-    beta_aligned = ifelse(allele == hg_increasing_allele, beta, -beta)
+    beta_aligned = ifelse(allele == hg_increasing_allele, beta, -beta),
+    allele_frequency = ifelse(allele == hg_increasing_allele, allele_frequency, 1-allele_frequency)
   )
 
 write.table(
@@ -1199,7 +1202,8 @@ write.table(
   file = gzfile("tables/top_hits_association_other_phenotypes.gz"),
   sep = " \t",
   col.names = T,
-  row.names = F
+  row.names = F,
+  quote = F
 )
 
 ```
