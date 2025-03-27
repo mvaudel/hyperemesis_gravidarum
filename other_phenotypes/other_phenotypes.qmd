@@ -1194,7 +1194,7 @@ lm_coefs_mother_merged <- lm_coefs_mother %>%
   mutate(
     hg_increasing_allele = ifelse(beta_meta >= 0, allele1, allele0),
     beta_aligned = ifelse(allele == hg_increasing_allele, beta, -beta),
-    allele_frequency = ifelse(allele == hg_increasing_allele, allele_frequency, 1-allele_frequency)
+    hg_increasing_allele_frequency = ifelse(allele == hg_increasing_allele, allele_frequency, 1-allele_frequency)
   )
 
 write.table(
