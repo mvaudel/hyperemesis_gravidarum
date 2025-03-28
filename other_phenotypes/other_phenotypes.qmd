@@ -583,7 +583,7 @@ Phenotypic association with NVP/HG
 
 ```{r}
 
-binary_phenotypes <- c("perinatal_death", "hospitalized_pre_eclampsia", "early_preeclampsia", "preeclampsia", "preeclampsia_serious")
+binary_phenotypes <- c("perinatal_death", "hospitalized_pre_eclampsia", "early_preeclampsia", "preeclampsia", "preeclampsia_serious", "diabetes", "diabetes_before", "diabetes_during", "diabetes_during_not_before")
 
 term_levels = c("<37w", ">=37w", "All")
 term_labels = c("before_37w", "after_or_equal_37w", "All")
