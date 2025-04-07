@@ -2,13 +2,13 @@
 Genetic analyses of hyperemesis gravidarum in the [Norwegian Mother, Father and Child Cohort Study (MoBa)](https://www.fhi.no/en/ch/studies/moba).
 The documentation corresponds to the analyses version `23-07-21`.
 ### Analyses
-- [Hyperemesis gravidarum](docs/23-07-21/hyperemesis_gravidarum_vs_all.md): GWAS of participants of pregnancies where the mother was hospitalized due to prolonged nausea and vomiting.
+- [Hyperemesis gravidarum](docs/23-07-21/hyperemesis_gravidarum_vs_all.md): GWAS of participants of pregnancies where the mother reported being hospitalized due to prolonged nausea and vomiting versus all other pregnancies.
 
-- [Hyperemesis gravidarum vs. no nausea vomiting](docs/23-07-21/hyperemesis_gravidarum_vs_no_nausea_vomiting.md): GWAS of participants of pregnancies where the mother was hospitalized due to prolonged nausea and vomiting.
+- [Hyperemesis gravidarum vs. no nausea vomiting](docs/23-07-21/hyperemesis_gravidarum_vs_no_nausea_vomiting.md): GWAS of participants of pregnancies where the mother reported being hospitalized due to prolonged nausea and vomiting versus mothers who did not report nausea or vomiting as control.
 
-- [Nausea vomiting during pregnancy](docs/23-07-21/nausea_vomiting.md): GWAS of participants of pregnancies where the mother suffered from nausea and vomiting.
+- [Nausea vomiting during pregnancy](docs/23-07-21/nausea_vomiting.md): GWAS of participants of pregnancies where the mother reported suffering from nausea or vomiting versus mothers who did not report nausea or vomiting as control.
 
-- [Nausea vomiting during pregnancy](docs/23-07-21/nausea_vomiting_strength.md): GWAS of participants of pregnancies where the mother suffered from nausea and vomiting.
+- [Nausea vomiting during pregnancy](docs/23-07-21/nausea_vomiting_strength.md): GWAS of participants of pregnancies encoding {0: mothers who did not report nausea or vomiting, 1: mothers reported nausea or vomiting, 2: mothers reported being hospitalized}.
 
 - [Nausea before week 4](docs/23-07-21/nausea_before_4w.md): GWAS of participants of pregnancies where the mother reported nausea before week 4.
 
