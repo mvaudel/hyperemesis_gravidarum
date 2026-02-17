@@ -773,6 +773,28 @@ device <- dev.off()
 
 ```{r}
 
+heatmap_data <- heatmap_data %>% 
+  mutate(
+    locus_label = paste0(id, " (", locus, ")")
+  )
+
+heatmap_order <- heatmap_data %>% 
+  select(
+    locus, locus_label
+  ) %>% 
+  distinct() %>% 
+  mutate(
+    locus_factor = factor(locus, locus_order)
+  ) %>% 
+  arrange(
+    locus_factor
+  )
+
+heatmap_data <- heatmap_data %>% 
+  mutate(
+    locus_label_factor = factor(locus_label, levels = rev(heatmap_order$locus_label))
+  )
+
 bubble_gwas <- ggplot(
   data = heatmap_data
 ) +
@@ -782,7 +804,7 @@ bubble_gwas <- ggplot(
   geom_point(
     mapping = aes(
       x = week_factor,
-      y = locus_factor,
+      y = locus_label_factor,
       col = beta,
       size = p_category_factor
     )
@@ -792,7 +814,7 @@ bubble_gwas <- ggplot(
   ) +
   scale_size_manual(
     name = NULL,
-    values = c(5, 10, 15, 20)
+    values = c(5, 8, 11, 15)
   ) +
   scale_color_scico(
     name = "Beta",
@@ -805,15 +827,17 @@ bubble_gwas <- ggplot(
   ) +
   theme(
     axis.title.y = element_blank(),
-    legend.position = "top",
+        legend.position = "top",
     legend.margin = margin(t = 0, b = 0, l = -40, r = 20, unit = 'pt'),
     panel.grid = element_blank()
   )
 
+grid.draw(bubble_gwas)
+
 png(
-  file = "plots/bubble_gwas_24.08.26.png",
-  height = 600,
-  width = 900
+  file = "plots/bubble_gwas_25.06.04.png",
+  height = 500,
+  width = 1100
 )
 grid.draw(bubble_gwas)
 device <- dev.off()
