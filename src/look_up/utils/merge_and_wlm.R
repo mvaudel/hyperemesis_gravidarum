@@ -1,7 +1,7 @@
 
 ##
 #
-# Writes the main documentation.
+# Merges results from child, mother, and father GWAS and computes WLM-adjusted effect estimates.
 #
 ##
 
