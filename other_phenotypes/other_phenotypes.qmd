@@ -498,7 +498,7 @@ for (phenotype in phenotypes) {
 
 phenotypes <- c("hc_birth", "placental_weight")
 
-dependentPhenoName <- "birth_weight"
+dependentPhenoName <- "weight_birth"
 
 pheno_child_genotyped_unrelated$dummy <- 0
 
@@ -1457,5 +1457,106 @@ write.table(
   row.names = F
 )
 
+
+```
+
+```{r}
+
+i <- !is.na(mfr_data$child_sentrix_id) & !is.na(mfr_data$early_preeclampsia) & mfr_data$early_preeclampsia == "Yes"
+
+length(unique(mfr_data$child_sentrix_id[i]))
+length(unique(mfr_data$preg_id[i]))
+
+i <- !is.na(mfr_data$mother_sentrix_id) & !is.na(mfr_data$early_preeclampsia) & mfr_data$early_preeclampsia == "Yes"
+
+length(unique(mfr_data$mother_sentrix_id[i]))
+
+i <- !is.na(mfr_data$child_sentrix_id) & !is.na(mfr_data$preeclampsia) & mfr_data$preeclampsia == "Light"
+
+length(unique(mfr_data$child_sentrix_id[i]))
+length(unique(mfr_data$preg_id[i]))
+
+i <- !is.na(mfr_data$mother_sentrix_id) & !is.na(mfr_data$preeclampsia) & mfr_data$preeclampsia == "Light"
+
+length(unique(mfr_data$mother_sentrix_id[i]))
+
+i <- !is.na(mfr_data$child_sentrix_id) & !is.na(mfr_data$preeclampsia) & mfr_data$preeclampsia == "Serious"
+
+length(unique(mfr_data$child_sentrix_id[i]))
+length(unique(mfr_data$preg_id[i]))
+
+i <- !is.na(mfr_data$mother_sentrix_id) & !is.na(mfr_data$preeclampsia) & mfr_data$preeclampsia == "Serious"
+
+length(unique(mfr_data$mother_sentrix_id[i]))
+
+i <- !is.na(mfr_data$child_sentrix_id) & !is.na(mfr_data$preeclampsia) & mfr_data$preeclampsia == "Unspecified"
+
+length(unique(mfr_data$child_sentrix_id[i]))
+length(unique(mfr_data$preg_id[i]))
+
+i <- !is.na(mfr_data$mother_sentrix_id) & !is.na(mfr_data$preeclampsia) & mfr_data$preeclampsia == "Unspecified"
+
+length(unique(mfr_data$mother_sentrix_id[i]))
+
+i <- !is.na(mfr_data$child_sentrix_id) & !is.na(mfr_data$eclampsia_total) & mfr_data$eclampsia_total == "Yes"
+
+length(unique(mfr_data$child_sentrix_id[i]))
+length(unique(mfr_data$preg_id[i]))
+
+i <- !is.na(mfr_data$mother_sentrix_id) & !is.na(mfr_data$eclampsia_total) & mfr_data$eclampsia_total == "Yes"
+
+length(unique(mfr_data$mother_sentrix_id[i]))
+
+mfr_data <- mfr_data %>% 
+  mutate(
+    case = ifelse(
+      !is.na(early_preeclampsia) | !is.na(preeclampsia) | !is.na(eclampsia_total), 1, 0
+    )
+  )
+
+i <- !is.na(mfr_data$child_sentrix_id) & mfr_data$case == 1
+
+length(unique(mfr_data$child_sentrix_id[i]))
+length(unique(mfr_data$preg_id[i]))
+
+i <- !is.na(mfr_data$mother_sentrix_id) & mfr_data$case == 1
+
+length(unique(mfr_data$mother_sentrix_id[i]))
+
+i <- !is.na(mfr_data$child_sentrix_id) & mfr_data$case == 0 & mfr_data$pregnancy_duration < 37 * 7
+
+length(unique(mfr_data$child_sentrix_id[i]))
+length(unique(mfr_data$preg_id[i]))
+
+i <- !is.na(mfr_data$mother_sentrix_id) & mfr_data$case == 0 & mfr_data$pregnancy_duration < 37 * 7
+
+length(unique(mfr_data$mother_sentrix_id[i]))
+
+i <- !is.na(mfr_data$child_sentrix_id) & mfr_data$case == 1 & mfr_data$pregnancy_duration < 37 * 7
+
+length(unique(mfr_data$child_sentrix_id[i]))
+length(unique(mfr_data$preg_id[i]))
+
+i <- !is.na(mfr_data$mother_sentrix_id) & mfr_data$case == 1 & mfr_data$pregnancy_duration < 37 * 7
+
+length(unique(mfr_data$mother_sentrix_id[i]))
+
+i <- !is.na(mfr_data$child_sentrix_id) & mfr_data$case == 0 & mfr_data$pregnancy_duration >= 37 * 7
+
+length(unique(mfr_data$child_sentrix_id[i]))
+length(unique(mfr_data$preg_id[i]))
+
+i <- !is.na(mfr_data$mother_sentrix_id) & mfr_data$case == 0 & mfr_data$pregnancy_duration >= 37 * 7
+
+length(unique(mfr_data$mother_sentrix_id[i]))
+
+i <- !is.na(mfr_data$child_sentrix_id) & mfr_data$case == 1 & mfr_data$pregnancy_duration >= 37 * 7
+
+length(unique(mfr_data$child_sentrix_id[i]))
+length(unique(mfr_data$preg_id[i]))
+
+i <- !is.na(mfr_data$mother_sentrix_id) & mfr_data$case == 1 & mfr_data$pregnancy_duration >= 37 * 7
+
+length(unique(mfr_data$mother_sentrix_id[i]))
 
 ```
