@@ -1,0 +1,323 @@
+---
+title: "nvp_mother_child"
+format: html
+---
+
+### Libraries
+
+```{r}
+
+library(janitor)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(scico)
+library(grid)
+
+theme_set(theme_bw(base_size = 16))
+
+```
+
+### Load data
+
+```{r}
+
+pregnancy <- read.table(
+  file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_25-11-21_psychgen/pregnancy.gz",
+  header = T,
+  sep = "\t"
+)
+
+```
+
+### Exclusion criteria
+
+```{r}
+
+phenotypes <- pregnancy %>% 
+  filter(
+    is.na(plural_birth) & !is.na(child_sentrix_id) & !is.na(mother_sentrix_id) & unrelated_children == 1
+  )
+
+```
+
+### Make nvp/hg variable
+
+```{r}
+
+phenotypes <- phenotypes %>% 
+mutate(
+    hospitalized_prolonged_nausea_vomiting = ifelse(is.na(hospitalized_prolonged_nausea_vomiting), 0, 1),
+    hospitalized_prolonged_nausea_vomiting_0_4w = ifelse(is.na(hospitalized_prolonged_nausea_vomiting_0_4w), 0, 1),
+    hospitalized_prolonged_nausea_vomiting_5_8w = ifelse(is.na(hospitalized_prolonged_nausea_vomiting_5_8w), 0, 1),
+    hospitalized_prolonged_nausea_vomiting_9_12w = ifelse(is.na(hospitalized_prolonged_nausea_vomiting_9_12w), 0, 1),
+    hospitalized_prolonged_nausea_vomiting_13_16w = ifelse(is.na(hospitalized_prolonged_nausea_vomiting_13_16w), 0, 1),
+    hospitalized_prolonged_nausea_vomiting_17_20w = ifelse(is.na(hospitalized_prolonged_nausea_vomiting_17_20w), 0, 1),
+    hospitalized_prolonged_nausea_vomiting_21_24w = ifelse(is.na(hospitalized_prolonged_nausea_vomiting_21_24w), 0, 1),
+    hospitalized_prolonged_nausea_vomiting_25_28w = ifelse(is.na(hospitalized_prolonged_nausea_vomiting_25_28w), 0, 1),
+    hospitalized_prolonged_nausea_vomiting_after_29w = ifelse(is.na(hospitalized_prolonged_nausea_vomiting_after_29w), 0, 1),
+    nausea_q2 = ifelse(!is.na(nausea_q2) & nausea_q2 == "Yes", 1, 0),
+    vomiting_q2 = ifelse(!is.na(vomiting_q2) & vomiting_q2 == "Yes", 1, 0),
+    nausea_any = ifelse(nausea_q2 == 1 | !is.na(nausea_before_4w) | !is.na(nausea_5w_8w) | !is.na(nausea_9w_12w) | !is.na(nausea_13w_15w) | !is.na(nausea_13w_16w) | !is.na(nausea_17w_20w) | !is.na(nausea_21w_24w) | !is.na(nausea_25w_28w) | !is.na(nausea_after_29w), 1, 0),
+    vomiting_any = ifelse(vomiting_q2 == 1 | !is.na(vomiting_before_4w) | !is.na(vomiting_5w_8w) | !is.na(vomiting_9w_12w) | !is.na(vomiting_13w_15w), 1, 0),
+    long_term_nausea_vomiting_any = ifelse(!is.na(long_term_nausea_vomiting_13w_16w) | !is.na(long_term_nausea_vomiting_17w_20w) | !is.na(long_term_nausea_vomiting_21w_24w) | !is.na(long_term_nausea_vomiting_25w_28w) | !is.na(long_term_nausea_vomiting_after_29w), 1, 0),
+    nvp = ifelse(nausea_any == 0 & vomiting_any == 0 & long_term_nausea_vomiting_any == 0, 0, 1),
+    hg = ifelse(hospitalized_prolonged_nausea_vomiting == 1, 1, 0)
+  )
+
+table(phenotypes$nvp)
+table(phenotypes$hg)
+
+```
+
+### One-hot encoding of batches
+
+```{r}
+
+batch_columns <- c()
+
+for (batch in unique(phenotypes$child_batch)) {
+  
+  batch_column <- make_clean_names(paste0("batch_child_", batch))
+  batch_columns[length(batch_columns) + 1] <- batch_column
+  
+  phenotypes[[batch_column]] <- ifelse(phenotypes$child_batch == batch, 1, 0)
+  
+}
+
+for (batch in unique(phenotypes$mother_batch)) {
+  
+  batch_column <- make_clean_names(paste0("batch_mother_", batch))
+  batch_columns[length(batch_columns) + 1] <- batch_column
+  
+  phenotypes[[batch_column]] <- ifelse(phenotypes$mother_batch == batch, 1, 0)
+  
+}
+
+```
+
+### Load genotypes
+
+```{r}
+
+genotypes <- read.table(
+  file = "/mnt/scratch/marc/moba/trio/nvp_jodie_26.7.01/top_hits/allele_transmission_table.gz",
+  header = T,
+  sep = "\t"
+)
+
+genotypes <- genotypes %>% 
+  mutate(
+    m = mnt + mt,
+    c = mt + ft
+  )
+
+```
+
+### Association with nvp/hgg
+
+```{r}
+
+association_data <- genotypes %>% 
+  inner_join(
+    phenotypes %>% 
+      select(
+        child_sentrix_id,
+        all_of(batch_columns),
+        sex,
+        nvp,
+        hg
+      ),
+    by = "child_sentrix_id"
+  )
+
+results <- list()
+
+for (snp in unique(genotypes$id)) {
+  
+  for (pheno in c("nvp", "hg")) {
+  
+  variant_association_data <- association_data %>% 
+    filter(
+      id == snp 
+    )
+  
+  model <- glm(
+    formula = as.formula(paste0(pheno, " ~ c + m + sex + ", paste(batch_columns, collapse = " + "))),
+    family = "binomial",
+    data = variant_association_data
+  )
+  
+  coefs <- summary(model)$coefficients
+  
+  association_results <- data.frame(
+    variant = snp,
+    chromosome = variant_association_data$chromosome[1],
+    position = variant_association_data$position[1],
+    ref = variant_association_data$ref[1],
+    alt = variant_association_data$alt[1],
+    phenotype = pheno,
+    beta_child = coefs["c", "Estimate"],
+    se_child = coefs["c", "Std. Error"],
+    p_child = coefs["c", "Pr(>|z|)"],
+    beta_mother = coefs["m", "Estimate"],
+    se_mother = coefs["m", "Std. Error"],
+    p_mother = coefs["m", "Pr(>|z|)"],
+    n = nrow(variant_association_data)
+  )
+  
+  results[[length(results) + 1]] <- association_results
+  
+  }
+}
+
+results <- do.call(rbind, results)
+
+```
+
+### Align betas on maternal allele
+
+```{r}
+
+results_aligned <- results
+
+for (i in 1:nrow(results_aligned)) {
+  
+  if(results_aligned$beta_mother[i] < 0) {
+    
+    temp_allele <- results_aligned$alt[i]
+    results_aligned$alt[i] <- results_aligned$ref[i]
+    results_aligned$ref[i] <- temp_allele
+    
+    results_aligned$beta_mother[i] <- -results_aligned$beta_mother[i]
+    results_aligned$beta_child[i] <- -results_aligned$beta_child[i]
+    
+  }
+  
+}
+
+write.table(
+  results_aligned,
+  file = "association",
+  col.names = T,
+  row.names = F,
+  sep = "\t",
+  quote = F
+)
+
+```
+
+### Forest plot
+
+```{r}
+
+snp_order <- results_aligned %>% 
+  filter(
+    phenotype == "nvp"
+  ) %>% 
+  arrange(
+    desc(p_mother)
+  ) %>% 
+  pull(
+    variant
+  )
+
+plot_data <- rbind(
+  results_aligned %>% 
+    select(
+      variant,
+      phenotype,
+      beta = beta_child,
+      se = se_child,
+      p = p_child
+    ) %>% 
+    mutate(
+      genome = "child"
+    ),
+  results_aligned %>% 
+    select(
+      variant,
+      phenotype,
+      beta = beta_mother,
+      se = se_mother,
+      p = p_mother
+    ) %>% 
+    mutate(
+      genome = "mother"
+    )
+) %>% 
+  mutate(
+    phenotype_factor = factor(phenotype, levels = c("nvp", "hg")),
+    genome_factor = factor(genome, levels = c("child", "mother")),
+    variant_factor = factor(variant, levels = snp_order),
+    y = as.numeric(variant_factor) + 1/4 * (as.numeric(genome_factor) - 1.5)
+  )
+
+levels(plot_data$phenotype_factor) <- c("NVP", "HG")
+
+forest_plot <- ggplot() +
+  geom_vline(
+    xintercept = 0
+  ) +
+  geom_point(
+    data = plot_data,
+    mapping = aes(
+      x = beta,
+      y = y,
+      col = genome_factor
+    )
+  ) +
+  geom_segment(
+    data = plot_data,
+    mapping = aes(
+      x = beta - qnorm(0.975) * se,
+      xend = beta + qnorm(0.975) * se,
+      y = y,
+      yend = y,
+      col = genome_factor
+    )
+  ) +
+  facet_grid(
+    . ~ phenotype_factor, 
+    scales = "free"
+  ) +
+  scale_color_manual(
+    values = scico(
+  n = 2,
+  palette = "cork",
+  begin = 0.25,
+  end = 0.75
+)
+  ) +
+  scale_x_continuous(
+    name = "Estimate [95% CI]"
+  ) +
+  scale_y_continuous(
+    breaks = 1:length(snp_order),
+    labels = snp_order,
+    limits = c(0, length(snp_order) + 1),
+    expand = c(0, 0)
+  ) +
+  theme(
+    legend.position = "top",
+    legend.title = element_blank(),
+    axis.title.y = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    strip.background = element_rect(
+      color = "black", 
+      fill = "white"
+    )
+  )
+
+png(
+  filename = "forest_plot.png",
+  width = 900,
+  height = 600
+)
+grid.draw(forest_plot)
+device <- dev.off()
+
+forest_plot
+
+```
