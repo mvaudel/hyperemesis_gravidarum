@@ -1,50 +1,77 @@
----
-title: "nvp_mother_child"
-format: gfm
----
+# nvp_mother_child
+
 
 ### Libraries
 
-```{r}
-
+``` r
 library(janitor)
+```
+
+
+    Attaching package: 'janitor'
+
+    The following objects are masked from 'package:stats':
+
+        chisq.test, fisher.test
+
+``` r
 library(tidyr)
+```
+
+    Warning: package 'tidyr' was built under R version 4.3.3
+
+``` r
 library(dplyr)
+```
+
+    Warning: package 'dplyr' was built under R version 4.3.3
+
+
+    Attaching package: 'dplyr'
+
+    The following objects are masked from 'package:stats':
+
+        filter, lag
+
+    The following objects are masked from 'package:base':
+
+        intersect, setdiff, setequal, union
+
+``` r
 library(ggplot2)
+```
+
+    Warning: package 'ggplot2' was built under R version 4.3.3
+
+``` r
 library(scico)
 library(grid)
 
 theme_set(theme_bw(base_size = 16))
-
 ```
 
 ### Load data
 
-```{r}
-
+``` r
 pregnancy <- read.table(
   file = "/mnt/archive/moba/pheno/v12/pheno_anthropometrics_25-11-21_psychgen/pregnancy.gz",
   header = T,
   sep = "\t"
 )
-
 ```
 
 ### Exclusion criteria
 
-```{r}
-
+``` r
 phenotypes <- pregnancy %>% 
   filter(
     is.na(plural_birth) & !is.na(child_sentrix_id) & !is.na(mother_sentrix_id) & unrelated_children == 1
   )
-
 ```
 
 ### Make nvp/hg variable
 
-```{r}
-
+``` r
 phenotypes <- phenotypes %>% 
 mutate(
     hospitalized_prolonged_nausea_vomiting = ifelse(is.na(hospitalized_prolonged_nausea_vomiting), 0, 1),
@@ -66,14 +93,23 @@ mutate(
   )
 
 table(phenotypes$nvp)
-table(phenotypes$hg)
-
 ```
+
+
+        0     1 
+    12631 36620 
+
+``` r
+table(phenotypes$hg)
+```
+
+
+        0     1 
+    48738   513 
 
 ### One-hot encoding of batches
 
-```{r}
-
+``` r
 batch_columns <- c()
 
 for (batch in unique(phenotypes$child_batch)) {
@@ -93,13 +129,11 @@ for (batch in unique(phenotypes$mother_batch)) {
   phenotypes[[batch_column]] <- ifelse(phenotypes$mother_batch == batch, 1, 0)
   
 }
-
 ```
 
 ### Load genotypes
 
-```{r}
-
+``` r
 genotypes <- read.table(
   file = "/mnt/scratch/marc/moba/trio/nvp_jodie_26.7.01/top_hits/allele_transmission_table.gz",
   header = T,
@@ -111,13 +145,11 @@ genotypes <- genotypes %>%
     m = mnt + mt,
     c = mt + ft
   )
-
 ```
 
 ### Association with nvp/hgg
 
-```{r}
-
+``` r
 association_data <- genotypes %>% 
   inner_join(
     phenotypes %>% 
@@ -172,13 +204,11 @@ for (snp in unique(genotypes$id)) {
 }
 
 results <- do.call(rbind, results)
-
 ```
 
 ### Align betas on maternal allele
 
-```{r}
-
+``` r
 results_aligned <- results
 
 for (i in 1:nrow(results_aligned)) {
@@ -204,13 +234,11 @@ write.table(
   sep = "\t",
   quote = F
 )
-
 ```
 
 ### Forest plot
 
-```{r}
-
+``` r
 snp_order <- results_aligned %>% 
   filter(
     phenotype == "nvp"
@@ -319,5 +347,6 @@ grid.draw(forest_plot)
 device <- dev.off()
 
 forest_plot
-
 ```
+
+![](nvp_mother_child_files/figure-commonmark/unnamed-chunk-9-1.png)
