@@ -315,7 +315,7 @@ forest_plot <- ggplot() +
 png(
   filename = "forest_plot.png",
   width = 900,
-  height = 600
+  height = 1200
 )
 grid.draw(forest_plot)
 device <- dev.off()
