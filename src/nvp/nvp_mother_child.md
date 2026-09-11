@@ -67,7 +67,11 @@ phenotypes <- pregnancy %>%
   filter(
     is.na(plural_birth) & !is.na(child_sentrix_id) & !is.na(mother_sentrix_id) & unrelated_children == 1
   )
+
+nrow(phenotypes)
 ```
+
+    [1] 49251
 
 ### Make nvp/hg variable
 
